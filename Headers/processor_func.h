@@ -3,25 +3,35 @@
 
 #include <stdio.h>
 
-#include "./global.h"
+#include "./common.h"
 #include "./stack.h"
-#include "../Headers/common.h"
+#include "./assembler.h"
 
+typedef struct 
+{
+    ByteCodeStruct byteCodeStruct;
+    Stack_t *stk;
+    size_t ip;//instruction pointer
+}ProcessorStruct;
 
-
-enum ERRORS ProcessorAdd(Stack_t *stk);
-enum ERRORS ProcessorSub(Stack_t *stk);
-enum ERRORS ProcessorDiv(Stack_t *stk);
-enum ERRORS ProcessorMul(Stack_t *stk); 
-
-extern const command push_;
-extern const command add_;
-extern const command sub_;
-extern const command div_;
-extern const command mul_;
-extern const command notcomm_;
-
-extern const command commands_[]; 
+extern const COMMAND_INDEX commands_[]; 
 extern const size_t number_of_commands_;
+
+extern const COMMAND_INDEX arg_commands_[]; 
+extern const size_t number_of_arg_commands_;
+
+void RunProcessor(ByteCodeStruct byteCodeStruct, Stack_t *stk);
+StackElem_t MakeElemFromByteCode(ProcessorStruct *proc);
+
+enum ERRORS ProcessorPush(ProcessorStruct *proc);
+enum ERRORS ProcessorOut(ProcessorStruct *proc);
+
+enum ERRORS ProcessorAdd(ProcessorStruct *proc);
+enum ERRORS ProcessorSub(ProcessorStruct *proc);
+enum ERRORS ProcessorDiv(ProcessorStruct *proc);
+enum ERRORS ProcessorMul(ProcessorStruct *proc);
+
+enum ERRORS ProcessorJump(ProcessorStruct *proc, COMMAND_INDEX index);
+
 
 #endif

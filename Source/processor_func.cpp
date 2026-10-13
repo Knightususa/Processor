@@ -2,164 +2,254 @@
 
 // include-what-you-use -- linux
 
-const command hlt_  = {.name = "HLT",  .index = hlt_index};
-
-const command push_ = {.name = "PUSH", .index = push_index};//TODO: remove name and add getName
-const command pop_  = {.name = "POP",  .index = pop_index};
-
-const command pusr_ = {.name = "PUSR", .index = pusr_index};
-const command popr_ = {.name = "POPR", .index = popr_index};
-
-const command add_  = {.name = "ADD",  .index = add_index};
-const command sub_  = {.name = "SUB",  .index = sub_index};
-const command div_  = {.name = "DIV",  .index = div_index};
-const command mul_  = {.name = "MUL",  .index = mul_index};
-
-const command jmp_  = {.name = "JMP",  .index = jmp_index};
-const command je_   = {.name = "JE",   .index = je_index};
-const command ja_   = {.name = "JA",   .index = ja_index};
-const command jae_  = {.name = "JAE",  .index = jae_index};
-const command jb_   = {.name = "JB",   .index = jb_index};
-const command jbe_  = {.name = "JBE",  .index = jbe_index};
-
-const command notcomm_ = {.name = "NOT_COMM", .index = not_command};
-
-const command commands_[] = 
+const COMMAND_INDEX commands_[] = 
 {
-    hlt_, push_, pop_, pusr_, popr_,
-    add_, sub_, div_, mul_,
-    jmp_, je_, ja_, jae_, jb_, jbe_,
-    notcomm_
+    hlt_index,
+    push_index, out_index, 
+    pusr_index, popr_index,
+    add_index, sub_index, div_index, mul_index,
+    jmp_index, je_index, ja_index, jae_index, jb_index, jbe_index,
+    notcomm_index
 };
 
 const size_t number_of_commands_ = sizeof(commands_) / sizeof(commands_[0]);
 
-
-enum ERRORS ProcessorAdd(Stack_t *stk)
+const COMMAND_INDEX arg_commands_[] = 
 {
-    enum ERRORS checkStack = CheckStack(*stk);
-    if(checkStack != noErr)
-    {
-        printf(RED " when trying to add\n\n" RESET);
-        yaissert(StackDump(stk));
-        return checkStack;
-    }    
-    yaissert(Verificator(stk));
+    push_index, out_index, 
+    jmp_index, je_index, ja_index, jae_index, jb_index, jbe_index
+};
 
-    int size = stk->size;
+const size_t number_of_arg_commands_ = sizeof(arg_commands_) / sizeof(arg_commands_[0]);
+
+void RunProcessor(ByteCodeStruct byteCodeStruct, Stack_t *stk)
+{
+    ProcessorStruct procdata = {.byteCodeStruct = byteCodeStruct, .stk = stk, .ip = 0};
+    ProcessorStruct *proc = &procdata;
+    while(proc->ip < byteCodeStruct.size)
+    {
+        COMMAND_INDEX index = (COMMAND_INDEX)proc->byteCodeStruct.byteCode[proc->ip];
+        printf("%s\n", GetCommandName(index));
+        switch(index)
+        {
+            case(hlt_index):
+                proc->ip = byteCodeStruct.size;
+                break;
+
+
+
+            case(push_index):
+                ProcessorPush(proc);
+                break;
+
+            case(out_index):
+                ProcessorOut(proc);
+                break;
+                
+
+
+            // case(pusr_index):
+            //     ProcessorPusr(proc);
+            //     break;
+
+            // case(popr_index):
+            //     ProcessorPopr(proc);
+            //     break;
+
+
+
+            case (add_index):
+                ProcessorAdd(proc);
+                break;
+                
+            case (sub_index):
+                ProcessorSub(proc);
+                break;
+                
+            case (div_index):
+                ProcessorDiv(proc);
+                break;
+                
+            case (mul_index):
+                ProcessorMul(proc);
+                break;
+
+
+
+            case(jmp_index):
+            case(je_index):
+            case(ja_index):
+            case(jae_index):
+            case(jb_index):
+            case(jbe_index):
+                ProcessorJump(proc, index);
+                break;
+
+            case(notcomm_index):
+            default:
+                proc->ip++;
+                break;
+        }
+        yaissert(StackDump(proc->stk));
+    }
+}
+
+enum ERRORS ProcessorPush(ProcessorStruct *proc)
+{
+    proc->ip++;
+    StackElem_t elemToPush = MakeElemFromByteCode(proc);
+    yaissert(StackDump(proc->stk));
+    StackPush(proc->stk, elemToPush);
+    return noErr;
+}
+
+StackElem_t MakeElemFromByteCode(ProcessorStruct *proc)
+{
+    StackElem_t elemToPush = (StackElem_t)(proc->byteCodeStruct.byteCode[proc->ip]);
+    proc->ip += sizeof(StackElem_t);
+    return elemToPush;
+}
+
+
+enum ERRORS ProcessorOut(ProcessorStruct *proc)
+{
+    proc->ip++;
+    StackElem_t elemThatPoped;
+    StackPop(proc->stk, &elemThatPoped);
+    printf("\n\n\nOuted from stack <%" PRINTF_T ">\n\n\n", elemThatPoped);
+    return noErr;
+}
+
+
+enum ERRORS ProcessorAdd(ProcessorStruct *proc)
+{
+    proc->ip++;
+    int size = proc->stk->size;
     if(size < 2)
     {
         printf("Too few elements for adding\n\n" RESET);
         return cantAdd;
     }
 
-    StackElem_t sum = (stk->data[size - 1]) + stk->data[size - 2]; 
-    stk->data[size - 2] = sum;
-    stk->data[size - 1] = stk->poison_v;
-    stk->size -= 1;
-    ResizeDown(stk);
-
-    HASH_PROTECTION(stk->hashData = CalculateHashData(*stk);
-                    stk->hashStack = CalculateHashStack(*stk);)
-        
-    yaissert(StackDump(stk));
+    StackElem_t elem1, elem2;
+    StackPop(proc->stk, &elem1);
+    StackPop(proc->stk, &elem2);
+    StackElem_t sum = elem1 + elem2;
+    StackPush(proc->stk, sum);
     return noErr;
 }
 
 
 
-enum ERRORS ProcessorSub(Stack_t *stk)
+enum ERRORS ProcessorSub(ProcessorStruct *proc)
 {
-    enum ERRORS checkStack = CheckStack(*stk);
-    if(checkStack != noErr)
-    {
-        printf(RED " when trying to subtraction\n\n" RESET);
-        yaissert(StackDump(stk));
-        return checkStack;
-    }    
-    yaissert(Verificator(stk));
-
-    int size = stk->size;
+    proc->ip++;
+    int size = proc->stk->size;
     if(size < 2)
     {
         printf("Too few elements for subtraction\n\n" RESET);
-        return cantAdd;
+        return cantSub;
     }
 
-    StackElem_t sub = (stk->data[size - 2]) - stk->data[size - 1]; 
-    stk->data[size - 2] = sub;
-    stk->data[size - 1] = stk->poison_v;
-    stk->size -= 1;
-    ResizeDown(stk);
+    StackElem_t elem1, elem2;
+    StackPop(proc->stk, &elem1);
+    StackPop(proc->stk, &elem2);
+    StackElem_t sub = elem1 - elem2;
 
-    HASH_PROTECTION(stk->hashData = CalculateHashData(*stk);
-                    stk->hashStack = CalculateHashStack(*stk);)
-        
-    yaissert(StackDump(stk));
+    StackPush(proc->stk, sub);
     return noErr;
 }
 
 
-
-enum ERRORS ProcessorDiv(Stack_t *stk)
+enum ERRORS ProcessorDiv(ProcessorStruct *proc)
 {
-    enum ERRORS checkStack = CheckStack(*stk);
-    if(checkStack != noErr)
-    {
-        printf(RED " when trying to division\n\n" RESET);
-        yaissert(StackDump(stk));
-        return checkStack;
-    }    
-    yaissert(Verificator(stk));
-
-    int size = stk->size;
+    proc->ip++;
+    int size = proc->stk->size;
     if(size < 2)
     {
         printf("Too few elements for division\n\n" RESET);
-        return cantAdd;
+        return cantDiv;
     }
 
-    StackElem_t div = (stk->data[size - 2]) / stk->data[size - 1]; 
-    stk->data[size - 2] = div;
-    stk->data[size - 1] = stk->poison_v;
-    stk->size -= 1;
-    ResizeDown(stk);
+    StackElem_t elem1, elem2;
+    StackPop(proc->stk, &elem1);
+    StackPop(proc->stk, &elem2);
+    StackElem_t div = elem1 / elem2;
 
-    HASH_PROTECTION(stk->hashData = CalculateHashData(*stk);
-                    stk->hashStack = CalculateHashStack(*stk);)
-        
-    yaissert(StackDump(stk));
+    StackPush(proc->stk, div);
     return noErr;
 }
 
 
-enum ERRORS ProcessorMul(Stack_t *stk)
-{
-    enum ERRORS checkStack = CheckStack(*stk);
-    if(checkStack != noErr)
-    {
-        printf(RED " when trying to multiply\n\n" RESET);
-        yaissert(StackDump(stk));
-        return checkStack;
-    }    
-    yaissert(Verificator(stk));
 
-    int size = stk->size;
+enum ERRORS ProcessorMul(ProcessorStruct *proc)
+{
+    proc->ip++;
+    int size = proc->stk->size;
     if(size < 2)
     {
         printf("Too few elements for multiply\n\n" RESET);
-        return cantAdd;
+        return cantMul;
     }
 
-    StackElem_t mul = (stk->data[size - 2]) * stk->data[size - 1]; 
-    stk->data[size - 2] = mul;
-    stk->data[size - 1] = stk->poison_v;
-    stk->size -= 1;
-    ResizeDown(stk);
+    StackElem_t elem1, elem2;
+    StackPop(proc->stk, &elem1);
+    StackPop(proc->stk, &elem2);
+    StackElem_t mul = elem1 * elem2;
 
-    HASH_PROTECTION(stk->hashData = CalculateHashData(*stk);
-                    stk->hashStack = CalculateHashStack(*stk);)
-        
-    yaissert(StackDump(stk));
+    StackPush(proc->stk, mul);
+    return noErr;
+}
+
+enum ERRORS ProcessorJump(ProcessorStruct *proc, COMMAND_INDEX index)
+{
+    proc->ip++;
+    int size = proc->stk->size;
+    if(size < 2)
+    {
+        printf("Too few elements for make compare\n\n" RESET);
+        return cantMul;
+    }
+
+    StackElem_t elem1, elem2;
+    StackPop(proc->stk, &elem1);
+    StackPop(proc->stk, &elem2);
+
+    bool equ = false;
+    switch (index)
+    {
+        case(jmp_index):
+            equ = true;
+            break;
+
+        case(je_index):
+            equ = elem2 == elem1;
+            break;
+
+        case(ja_index):
+            equ = elem2 > elem1;
+            break;
+
+        case(jae_index):
+            equ = elem2 >= elem1;
+            break;
+
+        case(jb_index):
+            equ = elem2 < elem1;
+            break;
+
+        case(jbe_index):
+            equ = elem2 <= elem1;
+            break;
+
+        default:
+            break;
+    }
+    if(equ)
+    {
+        StackElem_t indexToGo = MakeElemFromByteCode(proc);
+        proc->ip = (size_t) indexToGo;
+    }
+
     return noErr;
 }

@@ -1,8 +1,7 @@
-#include "../Headers/global.h"
+#include "../Headers/common.h"
 #include "../Headers/assembler.h"
 #include "../Headers/stack.h"
 #include "../Headers/processor_func.h"
-#include "../Headers/common.h"
 
 #include <string.h>
 #include <sys/types.h>
@@ -10,7 +9,7 @@
 #include <unistd.h>
 
 
-command *ReadFile(char *fileName, int *nCommands)
+ByteCodeStruct ReadFile(char *fileName)
 {
     char mode[] = "rb";
     FILE *pFile = safe_fopen(fileName, mode);//TODO: safe open
@@ -31,13 +30,17 @@ command *ReadFile(char *fileName, int *nCommands)
     char **pointerArr = (char **)safe_calloc((size_t)nlines, sizeof(char *));;
     SetPointerArr(stringText, fileSize, pointerArr);
 
-    command *takeCommands = (command*) safe_calloc(nlines, sizeof(command)); //TODO: safecalloc
-    for(int i = 0; i < nlines; i++)
-        takeCommands[i] = TakeCommand(pointerArr[i]);
+    ByteCodeStruct byteCodeStruct;
+    byteCodeStruct.nCommands = nlines;
+    byteCodeStruct.size = (sizeof(StackElem_t) + CommandMaxLen) * nlines;
+    byteCodeStruct.byteCode = (unsigned char*) safe_calloc(byteCodeStruct.size, sizeof(unsigned char)); //TODO: Elem_t
+    size_t indexByteCode = 0;
+    for(size_t i = 0; i < nlines; i++)
+        TakeCommand(pointerArr[i], byteCodeStruct.byteCode, &indexByteCode);
         
+
     fclose(pFile);
-    *nCommands = nlines;
-    return takeCommands;
+    return byteCodeStruct;
 }
 
 size_t ReplaceRNto0(char *stringText, size_t fileSize)
@@ -114,54 +117,73 @@ void SetPointerArr(char *stringText, size_t fileSize, char **pointerArr)
 }
 
 
-// void WriteAssemblerCode(FILE *inPipe, FILE *outPipe)
-// {
-//     command readCommand = ReadCommand(inPipe);
-// }
+void WriteByteCode(char *fileName, ByteCodeStruct byteCodeStruct)
+{
+    char mode[] = "wb";
+    FILE *pFile = safe_fopen(fileName, mode);
+
+    write(fileno(pFile), byteCodeStruct.byteCode, (unsigned int)byteCodeStruct.size);
+
+    fclose(pFile);
+}
 //TODO: Write code to file
 
 
-command TakeCommand(char *pointerToComm)
+void TakeCommand(char *pointerToComm, unsigned char *byteCode, size_t *indexByteCode)
 {
-    command command;
     char inputCommand[CommandMaxLen + 1] = "";//TODO: magicnumber
     char inputArg[ArgumentMaxLen] = "";
     DivideToPiece(pointerToComm, inputCommand, inputArg);
-    for(int i = 0; i < number_of_commands_ - 1; i++)
-        if(strcmp(inputCommand, commands_[i].name) == 0)//TODO: add strcmp for int
+    for(size_t i = 0; i < number_of_commands_ - 1; i++)
+        if(strcmp(inputCommand, GetCommandName(commands_[i])) == 0)//TODO: add strcmp for int
         {
-            command = commands_[i];
-            if(command.index == pusr_index || command.index == popr_index)
+            COMMAND_INDEX index = commands_[i];
+            if(index == pusr_index || index == popr_index)
             {
                 if(inputArg[1] == 'X')
-                    if('A' <= inputArg[0] && inputArg[0] <= 'D')
-                        command.argument = (int) (inputArg[0] - 'A' + 1);
-                else
                 {
-                    printf("INCORRECT INPUT NAME REGISTER\n");
-                    return notcomm_;
+                    if('A' <= inputArg[0] && inputArg[0] <= 'D')
+                    {
+                        byteCode[(*indexByteCode)++] = (unsigned char)index;
+
+                        StackElem_t arg = (StackElem_t) (inputArg[0] - 'A' + 1);
+                        WriteArgToByteCode(byteCode, indexByteCode, &arg);
+                        return;
+                    }
                 }
+                byteCode[(*indexByteCode)++] = (unsigned char)notcomm_index;
+                return;
             }
 
-            else if(command.index == push_index || command.index == pop_index)
+            else if (IsCommandHaveArg(index))
             {
-                int arg = 0;
-                if(inputArg[0] != '0')
-                {
-                    arg = atoi(inputArg);
-                    if(arg == 0)
-                    {
-                        printf("INCORRECT INPUT ARGUMENT\n");
-                        return notcomm_;
-                    }
-                    command.argument = arg;
-                }
-                else 
-                    command.argument = 0;
+                byteCode[(*indexByteCode)++] = (unsigned char)index;
+
+                StackElem_t arg = 0;
+                sscanf(inputArg, "%" PRINTF_T, &arg);
+                WriteArgToByteCode(byteCode, indexByteCode, &arg);
+                return;
             }
-            return command;
+            byteCode[(*indexByteCode)++] = (unsigned char)index;
+            return;
         }
-    return notcomm_;
+    byteCode[(*indexByteCode)++] = (unsigned char)notcomm_index;
+}
+
+bool IsCommandHaveArg(COMMAND_INDEX index)
+{
+    for(size_t i = 0; i < number_of_arg_commands_; i++)
+    {
+        if(index == arg_commands_[i])
+            return true;
+    }
+    return false;
+}
+
+void WriteArgToByteCode(unsigned char *byteCode, size_t *indexByteCode, StackElem_t *arg)
+{
+    for(size_t i = 0; i < sizeof(StackElem_t); i++)
+        byteCode[(*indexByteCode)++] = (unsigned char)*(arg + i);
 }
 
 void DivideToPiece(char *pointerToComm, char *inputCommand, char *inputArg)
@@ -193,7 +215,7 @@ const char *GetCommandName(COMMAND_INDEX commandIndex)
         case hlt_index:  return "HLT";
 
         case push_index: return "PUSH";
-        case pop_index:  return "POP";
+        case out_index:  return "OUT";
         
         case pusr_index: return "PUSR";
         case popr_index: return "POPR";
@@ -210,6 +232,7 @@ const char *GetCommandName(COMMAND_INDEX commandIndex)
         case jb_index:   return "JB";
         case jbe_index:  return "JBE";
         
+        case notcomm_index: return "NOT_COMM";
         default: return "NOT_COMM";
     }
 }

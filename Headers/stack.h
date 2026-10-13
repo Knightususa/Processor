@@ -1,33 +1,20 @@
 #ifndef STACK_H
 #define STACK_H
 
-#include <stdio.h>
-#include <stdlib.h>
-
-#include <math.h>
-#include <stdbool.h>
-#include <string.h>
-
-#include <assert.h>
-#include <errno.h>
-
-#include "./global.h"
 #include "./dump.h"
-#include "../Headers/common.h"
-
-
+#include "./common.h"
 
 bool Verificator(Stack_t *stack);
 
 enum ERRORS StackInit(Stack_t *stack);
 enum ERRORS StackDestroy(Stack_t *stack);
-enum ERRORS StackPush(Stack_t *stack, StackElem_t valueToPush);
-enum ERRORS StackPop(Stack_t *stack);
+enum ERRORS StackPush(Stack_t *stk, StackElem_t elem);
+enum ERRORS StackPop(Stack_t *stk, StackElem_t *popValue);
 
 enum ERRORS ResizeUp(Stack_t *stack);
 enum ERRORS ResizeDown(Stack_t *stack);
 
-enum ERRORS CheckStack(Stack_t stk);
+enum ERRORS CheckStack(Stack_t stk);    
 
 void EditHash(unsigned long long *hash, unsigned long long value);
 

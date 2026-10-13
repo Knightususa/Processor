@@ -43,13 +43,6 @@ typedef char StackElem_t;
 #define PRINTF_T "c"
 #define TEXT_T_VALUE "char"
 
-#elif  defined(STACK_T_STRUCT)
-typedef Struction StackElem_t;
-#define POISON_V {-1488526967, '~', NAN}
-#define StackDump StackDumpS
-#define InputPushValue InputPushValueS
-#define IsValuePoison IsValuePoisonS
-
 #else
 typedef int StackElem_t;
 #define POISON_V -1488526967
@@ -75,24 +68,6 @@ typedef int StackElem_t;
 #define CANARY_PROTECTION(...)
 #endif
 
-
-
-typedef struct
-{
-    CANARY_PROTECTION(unsigned long long arbusL; //LEFT CANARY
-                      unsigned long long arbusDefault;)//DEFAULT VALUE OF CANARY
-    int size;
-    int capacity;
-    StackElem_t *data;
-    StackElem_t poison_v;
-    CANARY_PROTECTION(unsigned long long *canaryL;
-                      unsigned long long *canaryR;
-                      unsigned long long canaryDefault;)
-    HASH_PROTECTION(unsigned long long hashData;
-        unsigned long long hashStack;)
-    CANARY_PROTECTION(unsigned long long arbusR;) //RIGHT CANARY
-}Stack_t;
-
 enum ERRORS
 {
     noErr,
@@ -102,7 +77,7 @@ enum ERRORS
     stackNoResize,
     dataPointerNull,
     cantAdd,//add error assembler
-    candSub,
+    cantSub,
     cantDiv,
     cantMul
     CANARY_PROTECTION(,
@@ -125,35 +100,28 @@ enum OPTIONS
 
 enum COMMAND_INDEX
 {
-    hlt_index  = 0,
+    hlt_index     = 0,
+   
+    push_index    = 1,
+    out_index     = 2,
+   
+    pusr_index    = 3,
+    popr_index    = 4,
+   
+    add_index     = 5,
+    sub_index     = 6,
+    div_index     = 7,
+    mul_index     = 8,
+   
+    jmp_index     = 9,
+    je_index      = 10,
+    ja_index      = 11,
+    jae_index     = 12,
+    jb_index      = 13,
+    jbe_index     = 14,
 
-    push_index = 1,
-    pop_index  = 2,
-
-    pusr_index = 3,
-    popr_index = 4,
-
-    add_index  = 5,
-    sub_index  = 6,
-    div_index  = 7,
-    mul_index  = 8,
-
-    jmp_index  = 9,
-    je_index   = 10,
-    ja_index   = 11,
-    jae_index  = 12,
-    jb_index   = 13,
-    jbe_index  = 14,
-
-    not_command = 15
+    notcomm_index = 15
 };
-
-typedef struct 
-{
-    const char *name;
-    COMMAND_INDEX index;
-    int argument;//TODO: command ardument 
-}command;
 
 #endif
 //end #ifndef GLOBAL_H
