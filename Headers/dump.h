@@ -29,11 +29,10 @@ typedef struct
 }Stack_t;
 
 int StackDumpCID(Stack_t *stack);
-int StackDumpS(Stack_t *stack);
 
 bool IsValuePoisonCI(Stack_t stack, StackElem_t value);
 bool IsValuePoisonD(Stack_t stack, StackElem_t value);
-bool IsValuePoisonS(Stack_t stack, StackElem_t value);
+bool IsZero(StackElem_t a, StackElem_t b);
 
 #endif
 //end #ifndef DUMP_H

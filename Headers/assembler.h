@@ -12,16 +12,15 @@ typedef struct
     size_t size;
 }ByteCodeStruct;
 
+extern const int number_of_labels;
 
 ByteCodeStruct ReadFile(char *fileName);
 size_t ReplaceRNto0(char *stringText, size_t fileSize);
 void SetPointerArr(char *stringText, size_t fileSize, char **pointerArr);
 
-void TakeCommand(char *pointerToComm, unsigned char *byteCode, size_t *indexByteCode);
-const char *GetCommandName(COMMAND_INDEX commandIndex);
+void TakeCommand(char *pointerToComm, unsigned char *byteCode, size_t *indexByteCode, size_t *labels);
 void DivideToPiece(char *pointerToComm, char *inputCommand, char *inputArg);
-bool IsCommandHaveArg(COMMAND_INDEX index);
-void WriteArgToByteCode(unsigned char *byteCode, size_t *indexByteCode, StackElem_t *arg);
+void WriteArgToByteCode(unsigned char *byteCode, size_t *indexByteCode, void *arg, size_t size);
 
 void WriteByteCode(char *fileName, ByteCodeStruct byteCodeStruct);
 

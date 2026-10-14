@@ -8,6 +8,7 @@
 #include "./stack.h"
 #include "./assembler.h"
 
+
 typedef struct 
 {
     ByteCodeStruct byteCodeStruct;
@@ -16,11 +17,17 @@ typedef struct
     size_t ip;//instruction pointer
 }ProcessorStruct;
 
-extern const COMMAND_INDEX commands_[]; 
-extern const size_t number_of_commands_;
 
-extern const COMMAND_INDEX arg_commands_[]; 
-extern const size_t number_of_arg_commands_;
+typedef struct
+{
+    COMMAND_INDEX index;
+    const char *name;
+    int args;
+    enum ERRORS (*function)(ProcessorStruct *);
+}Command;
+
+extern const Command commands_[];  
+extern const size_t number_of_commands_;
 
 extern const int number_of_registers;
 
@@ -28,7 +35,9 @@ void RunProcessor(ByteCodeStruct byteCodeStruct, Stack_t *stk);
 ProcessorStruct *ProcessorStructInit(ByteCodeStruct byteCodeStruct, Stack_t *stk);
 void ProcessorRegistersInit(ProcessorStruct *proc);
 
-StackElem_t MakeElemFromByteCode(ProcessorStruct *proc);
+void *MakeElemFromByteCode(ProcessorStruct *proc, size_t size);
+
+enum ERRORS ProcessorHlt(ProcessorStruct *proc);
 
 enum ERRORS ProcessorPush(ProcessorStruct *proc);
 enum ERRORS ProcessorOut(ProcessorStruct *proc);
@@ -42,7 +51,12 @@ enum ERRORS ProcessorDiv(ProcessorStruct *proc);
 enum ERRORS ProcessorMul(ProcessorStruct *proc);
 enum ERRORS ProcessorSqrt(ProcessorStruct *proc);
 
-enum ERRORS ProcessorJump(ProcessorStruct *proc);
-enum ERRORS ProcessorJumpIf(ProcessorStruct *proc);
+enum ERRORS ProcessorJmp(ProcessorStruct *proc);
+enum ERRORS ProcessorJe(ProcessorStruct *proc);
+enum ERRORS ProcessorJa(ProcessorStruct *proc);
+enum ERRORS ProcessorJae(ProcessorStruct *proc);
+enum ERRORS ProcessorJb(ProcessorStruct *proc);
+enum ERRORS ProcessorJbe(ProcessorStruct *proc);
 
+enum ERRORS ProcessorNotComm(ProcessorStruct *proc);
 #endif
