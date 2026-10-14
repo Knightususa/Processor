@@ -51,8 +51,7 @@ enum ERRORS_STACK StackInit(Stack_t *stk)
     HASH_PROTECTION(stk->hashData = CalculateHashData(*stk);
                     stk->hashStack = CalculateHashStack(*stk);)
 
-    yaissert(StackDump(stk));
-    printf(MAGENTA "\nCreate and initialize stack successfully\n\n" RESET);
+    // printf(MAGENTA "\nCreate and initialize stack successfully\n\n" RESET);
 
     return stackNoErr;
 }

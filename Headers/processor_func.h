@@ -30,10 +30,12 @@ extern const Command commands_[];
 extern const size_t number_of_commands_;
 
 extern const int number_of_registers;
+extern const size_t number_of_elem_on_line;
 
 void RunProcessor(ByteCodeStruct byteCodeStruct, Stack_t *stk);
 ProcessorStruct *ProcessorStructInit(ByteCodeStruct byteCodeStruct, Stack_t *stk);
 void ProcessorRegistersInit(ProcessorStruct *proc);
+void PrintProcessor(ProcessorStruct *proc);
 
 void *MakeElemFromByteCode(ProcessorStruct *proc, size_t size);
 

@@ -23,14 +23,14 @@ main()
         CANARY_PROTECTION(,
                           .arbusR = 0,)
     };
-    // char fileName[]  = "./Code_txt/PrintSquare.txt";
-    // char fileName1[] = "./Code_bin/PrintSquare.bin";
+    char fileName[]  = "./Code_txt/PrintSquare.txt";
+    char fileName1[] = "./Code_bin/PrintSquare.bin";
 
     // char fileName[]  = "./Code_txt/Test.txt";
     // char fileName1[] = "./Code_bin/Test.bin";
 
-    char fileName[]  = "./Code_txt/TestLabels.txt";
-    char fileName1[] = "./Code_bin/TestLabels.bin";
+    // char fileName[]  = "./Code_txt/TestLabels.txt";
+    // char fileName1[] = "./Code_bin/TestLabels.bin";
 
     ByteCodeStruct byteCodeStruct = ReadFile(fileName);
     WriteByteCode(fileName1, byteCodeStruct);

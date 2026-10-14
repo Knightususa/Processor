@@ -34,17 +34,58 @@ const Command commands_[] =
 const size_t number_of_commands_ = sizeof(commands_) / sizeof(commands_[0]);
 
 const int number_of_registers = 10;
+const size_t number_of_elem_on_line = 20;
 
 void RunProcessor(ByteCodeStruct byteCodeStruct, Stack_t *stk)
 {
     ProcessorStruct *proc = ProcessorStructInit(byteCodeStruct, stk);
     while(proc->ip < byteCodeStruct.size)
     {
+        PrintProcessor(proc);
         COMMAND_INDEX index = (COMMAND_INDEX)proc->byteCodeStruct.byteCode[proc->ip];
         commands_[index].function(proc);
-        printf("%s\n", commands_[index].name);
-        yaissert(StackDump(proc->stk));
+        // printf("%s\n", commands_[index].name);
+        // yaissert(StackDump(proc->stk));
     }
+}
+
+void PrintProcessor(ProcessorStruct *proc)
+{
+    size_t size = proc->byteCodeStruct.size;
+    size_t ip = proc->ip;
+    printf("ip = %i\n", ip);
+    size_t n = number_of_elem_on_line;
+    for(size_t i = 0; i < size; i++)
+    {
+
+        if((i + 1) % n == 1 || (i + 1) == 0)
+            printf("[");
+
+        if(i == ip)
+            printf(RED);
+        printf("%02X" RESET, proc->byteCodeStruct.byteCode[i]);
+
+        if(i == size - 1)
+            printf("]");
+
+        else if((i + 1) % n == 0 && (i + 1) > 0)
+        {
+            printf("]\n");
+            size_t delta = ip - (n * (i / n));
+
+            if(delta < n)
+            {
+                for(size_t j = 0; j < delta * 4 + 1; j++)
+                    printf(" ");
+                printf(RED BOLD "^" RESET);
+            }
+            printf("\n");
+        }
+
+        else if((i + 1) < size - 1)
+            printf(", ");
+    }
+    printf("\n\n\n\n");
 }
 
 ProcessorStruct *ProcessorStructInit(ByteCodeStruct byteCodeStruct, Stack_t *stk)

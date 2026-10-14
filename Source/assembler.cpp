@@ -19,7 +19,7 @@ ByteCodeStruct ReadFile(char *fileName)
     fstat(fileno(pFile), &fileStat);
     size_t fileSize = fileStat.st_size;
 
-    printf("Size of file = " RED "%lli bytes\n\n\n" RESET, fileSize);
+    // printf("Size of file = " RED "%lli bytes\n\n\n" RESET, fileSize);
     char *stringText = (char *)safe_calloc((size_t)fileSize + 1, sizeof(char));
 
     size_t nReadBytes = safe_fread((void *) stringText, sizeof(char), fileSize, pFile);
@@ -39,11 +39,17 @@ ByteCodeStruct ReadFile(char *fileName)
     byteCodeStruct.byteCode = (unsigned char*) safe_calloc(byteCodeStruct.size, sizeof(unsigned char));
 
     size_t *labels = (size_t *)safe_calloc(sizeof(size_t), number_of_labels);
+    size_t indexByteCode = 0;
     for(int j = 0; j < 2; j++)
     {
-        size_t indexByteCode = 0;
+        indexByteCode = 0;
         for(size_t i = 0; i < nlines; i++)
             TakeCommand(pointerArr[i], byteCodeStruct.byteCode, &indexByteCode, labels);
+    }
+    if(indexByteCode < byteCodeStruct.size)
+    {
+        byteCodeStruct.size = indexByteCode * sizeof(unsigned char);
+        byteCodeStruct.byteCode = (unsigned char *)realloc(byteCodeStruct.byteCode, byteCodeStruct.size);
     }
 
     safe_free(labels, number_of_labels * sizeof(size_t));
