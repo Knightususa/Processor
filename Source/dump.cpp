@@ -22,7 +22,7 @@ bool IsValuePoisonD(Stack_t stk, StackElem_t value)
 //CID - CHAR or INT or DOUBLE
 int StackDumpCID(Stack_t *stk)
 {
-    printf(YELLOW "DEBUG |Index|     Pointer      |      Value\n");
+    printf(YELLOW "\n\nDEBUG |Index|     Pointer      |      Value\n");
     CANARY_PROTECTION(
     printf(YELLOW "DEBUG |     " YELLOW "|" CYAN " %p " YELLOW "|" CYAN " arbusL  = %llX\n", &(stk->arbusL), stk->arbusL);
     printf(YELLOW "DEBUG |     " YELLOW "|" CYAN " %p " YELLOW "|" CYAN " arbusDefault  = %llX\n", &(stk->arbusDefault), stk->arbusDefault);
@@ -60,7 +60,7 @@ int StackDumpCID(Stack_t *stk)
         if(i != stk->capacity - 1)
             printf(", ");
     }
-    printf("]\n");
+    printf("]\n\n\n");
     printf(RESET);
     return 1;
 }

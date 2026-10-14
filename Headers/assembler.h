@@ -7,7 +7,7 @@
 
 typedef struct
 {
-    unsigned char *byteCode;
+    unsigned char *byteCode;//TODO const unsigned char*
     size_t nCommands;
     size_t size;
 }ByteCodeStruct;

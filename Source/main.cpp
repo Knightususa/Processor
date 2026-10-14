@@ -23,7 +23,6 @@ main()
         CANARY_PROTECTION(,
                           .arbusR = 0,)
     };
-
     char fileName[] = "program1.txt";
     char fileName1[] = "program1.bin";
     ByteCodeStruct byteCodeStruct = ReadFile(fileName);

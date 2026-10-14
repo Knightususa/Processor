@@ -29,7 +29,9 @@ ByteCodeStruct ReadFile(char *fileName)
     
     char **pointerArr = (char **)safe_calloc((size_t)nlines, sizeof(char *));;
     SetPointerArr(stringText, fileSize, pointerArr);
-
+//---------------------------------------------- 
+//TODO: divide to funcs
+//TODO: array of sstruct
     ByteCodeStruct byteCodeStruct;
     byteCodeStruct.nCommands = nlines;
     byteCodeStruct.size = (sizeof(StackElem_t) + CommandMaxLen) * nlines;
@@ -146,8 +148,8 @@ void TakeCommand(char *pointerToComm, unsigned char *byteCode, size_t *indexByte
                     {
                         byteCode[(*indexByteCode)++] = (unsigned char)index;
 
-                        StackElem_t arg = (StackElem_t) (inputArg[0] - 'A' + 1);
-                        WriteArgToByteCode(byteCode, indexByteCode, &arg);
+                        unsigned char registerIndex = (unsigned char) (inputArg[0] - 'A' + 1);
+                        byteCode[(*indexByteCode)++] = registerIndex;
                         return;
                     }
                 }
@@ -183,7 +185,7 @@ bool IsCommandHaveArg(COMMAND_INDEX index)
 void WriteArgToByteCode(unsigned char *byteCode, size_t *indexByteCode, StackElem_t *arg)
 {
     for(size_t i = 0; i < sizeof(StackElem_t); i++)
-        byteCode[(*indexByteCode)++] = (unsigned char)*(arg + i);
+        byteCode[(*indexByteCode)++] = (unsigned char)*((unsigned char *)arg + i);
 }
 
 void DivideToPiece(char *pointerToComm, char *inputCommand, char *inputArg)
@@ -224,6 +226,7 @@ const char *GetCommandName(COMMAND_INDEX commandIndex)
         case sub_index:  return "SUB";
         case div_index:  return "DIV";
         case mul_index:  return "MUL";
+        case sqrt_index:  return "SQRT";
         
         case jmp_index:  return "JMP";
         case je_index:   return "JE";

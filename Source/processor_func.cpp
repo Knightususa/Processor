@@ -1,13 +1,16 @@
 #include "../Headers/processor_func.h"
 
 // include-what-you-use -- linux
-
+// cmd arr
+//  {name "push", enum PUSH, args=1, pointerToFunc}
+//  {name "pop",  enum POP,  args=0}
+// TODO
 const COMMAND_INDEX commands_[] = 
 {
     hlt_index,
     push_index, out_index, 
     pusr_index, popr_index,
-    add_index, sub_index, div_index, mul_index,
+    add_index, sub_index, div_index, mul_index, sqrt_index,
     jmp_index, je_index, ja_index, jae_index, jb_index, jbe_index,
     notcomm_index
 };
@@ -22,10 +25,11 @@ const COMMAND_INDEX arg_commands_[] =
 
 const size_t number_of_arg_commands_ = sizeof(arg_commands_) / sizeof(arg_commands_[0]);
 
+const int number_of_registers = 10;
+
 void RunProcessor(ByteCodeStruct byteCodeStruct, Stack_t *stk)
 {
-    ProcessorStruct procdata = {.byteCodeStruct = byteCodeStruct, .stk = stk, .ip = 0};
-    ProcessorStruct *proc = &procdata;
+    ProcessorStruct *proc = ProcessorStructInit(byteCodeStruct, stk);
     while(proc->ip < byteCodeStruct.size)
     {
         COMMAND_INDEX index = (COMMAND_INDEX)proc->byteCodeStruct.byteCode[proc->ip];
@@ -48,13 +52,13 @@ void RunProcessor(ByteCodeStruct byteCodeStruct, Stack_t *stk)
                 
 
 
-            // case(pusr_index):
-            //     ProcessorPusr(proc);
-            //     break;
+            case(pusr_index):
+                ProcessorPusr(proc);
+                break;
 
-            // case(popr_index):
-            //     ProcessorPopr(proc);
-            //     break;
+            case(popr_index):
+                ProcessorPopr(proc);
+                break;
 
 
 
@@ -74,15 +78,22 @@ void RunProcessor(ByteCodeStruct byteCodeStruct, Stack_t *stk)
                 ProcessorMul(proc);
                 break;
 
+            case (sqrt_index):
+                ProcessorSqrt(proc);
+                break;
+
 
 
             case(jmp_index):
+                ProcessorJump(proc);
+                break;
+
             case(je_index):
             case(ja_index):
             case(jae_index):
             case(jb_index):
             case(jbe_index):
-                ProcessorJump(proc, index);
+                ProcessorJumpIf(proc);
                 break;
 
             case(notcomm_index):
@@ -94,20 +105,37 @@ void RunProcessor(ByteCodeStruct byteCodeStruct, Stack_t *stk)
     }
 }
 
+ProcessorStruct *ProcessorStructInit(ByteCodeStruct byteCodeStruct, Stack_t *stk)
+{
+    ProcessorStruct *proc = (ProcessorStruct *)safe_calloc(sizeof(ProcessorStruct), 1);
+    proc->byteCodeStruct = byteCodeStruct;
+    proc->stk = stk;
+    proc->ip = 0;
+    ProcessorRegistersInit(proc);
+    return proc;
+}
+
+void ProcessorRegistersInit(ProcessorStruct *proc)
+{
+    proc->registers = (StackElem_t *)safe_calloc(sizeof(StackElem_t), number_of_registers);
+    for(int i = 0; i < number_of_registers; i++)
+        proc->registers[i] = proc->stk->poison_v;
+}
+
 enum ERRORS ProcessorPush(ProcessorStruct *proc)
 {
     proc->ip++;
     StackElem_t elemToPush = MakeElemFromByteCode(proc);
-    yaissert(StackDump(proc->stk));
     StackPush(proc->stk, elemToPush);
     return noErr;
 }
 
 StackElem_t MakeElemFromByteCode(ProcessorStruct *proc)
 {
-    StackElem_t elemToPush = (StackElem_t)(proc->byteCodeStruct.byteCode[proc->ip]);
-    proc->ip += sizeof(StackElem_t);
-    return elemToPush;
+    StackElem_t elem = 0;
+    for(int i = 0; i < sizeof(StackElem_t); i++)
+        *((unsigned char *)&elem + i) = proc->byteCodeStruct.byteCode[proc->ip++];
+    return elem;
 }
 
 
@@ -120,6 +148,27 @@ enum ERRORS ProcessorOut(ProcessorStruct *proc)
     return noErr;
 }
 
+
+enum ERRORS ProcessorPusr(ProcessorStruct *proc)
+{
+    proc->ip++;
+    int indexInRegisterArr = proc->byteCodeStruct.byteCode[proc->ip++];
+    StackElem_t elemToPush = proc->registers[indexInRegisterArr];
+    StackPush(proc->stk, elemToPush);
+    return noErr;
+}
+
+
+enum ERRORS ProcessorPopr(ProcessorStruct *proc)
+{
+    proc->ip++;
+    StackElem_t elemThatPoped;
+    StackPop(proc->stk, &elemThatPoped);
+
+    int indexInRegisterArr = proc->byteCodeStruct.byteCode[proc->ip++];
+    proc->registers[indexInRegisterArr] = elemThatPoped;
+    return noErr;
+}
 
 enum ERRORS ProcessorAdd(ProcessorStruct *proc)
 {
@@ -201,15 +250,41 @@ enum ERRORS ProcessorMul(ProcessorStruct *proc)
     return noErr;
 }
 
-enum ERRORS ProcessorJump(ProcessorStruct *proc, COMMAND_INDEX index)
+enum ERRORS ProcessorSqrt(ProcessorStruct *proc)
 {
     proc->ip++;
+    int size = proc->stk->size;
+    if(size < 1)
+    {
+        printf("Too few elements for sqrt\n\n" RESET);
+        return cantMul;
+    }
+    StackElem_t elem1;
+    StackPop(proc->stk, &elem1);
+
+    StackElem_t sqrt_value = sqrt(elem1);
+    StackPush(proc->stk, sqrt_value);
+    return noErr;
+}
+
+enum ERRORS ProcessorJump(ProcessorStruct *proc)
+{
+    proc->ip++;
+    StackElem_t indexToGo = MakeElemFromByteCode(proc);
+    proc->ip = (size_t) indexToGo;
+    return noErr;
+}
+
+enum ERRORS ProcessorJumpIf(ProcessorStruct *proc)
+{
     int size = proc->stk->size;
     if(size < 2)
     {
         printf("Too few elements for make compare\n\n" RESET);
-        return cantMul;
+        proc->ip++;
+        return cantJump;
     }
+    COMMAND_INDEX index = (COMMAND_INDEX)proc->byteCodeStruct.byteCode[proc->ip];
 
     StackElem_t elem1, elem2;
     StackPop(proc->stk, &elem1);
@@ -218,10 +293,6 @@ enum ERRORS ProcessorJump(ProcessorStruct *proc, COMMAND_INDEX index)
     bool equ = false;
     switch (index)
     {
-        case(jmp_index):
-            equ = true;
-            break;
-
         case(je_index):
             equ = elem2 == elem1;
             break;
@@ -246,10 +317,9 @@ enum ERRORS ProcessorJump(ProcessorStruct *proc, COMMAND_INDEX index)
             break;
     }
     if(equ)
-    {
-        StackElem_t indexToGo = MakeElemFromByteCode(proc);
-        proc->ip = (size_t) indexToGo;
-    }
+        ProcessorJump(proc);
+    else
+        proc->ip++;
 
     return noErr;
 }

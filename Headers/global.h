@@ -77,9 +77,11 @@ enum ERRORS
     stackNoResize,
     dataPointerNull,
     cantAdd,//add error assembler
+    //TODO
     cantSub,
     cantDiv,
-    cantMul
+    cantMul,
+    cantJump
     CANARY_PROTECTION(,
                       leftCanaryDataKilled,
                       rightCanaryDataKilled,
@@ -112,15 +114,16 @@ enum COMMAND_INDEX
     sub_index     = 6,
     div_index     = 7,
     mul_index     = 8,
+    sqrt_index    = 9,
    
-    jmp_index     = 9,
-    je_index      = 10,
-    ja_index      = 11,
-    jae_index     = 12,
-    jb_index      = 13,
-    jbe_index     = 14,
+    jmp_index     = 10,
+    je_index      = 11,
+    ja_index      = 12,
+    jae_index     = 13,
+    jb_index      = 14,
+    jbe_index     = 15,
 
-    notcomm_index = 15
+    notcomm_index = 16
 };
 
 #endif

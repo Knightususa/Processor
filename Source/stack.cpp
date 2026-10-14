@@ -131,7 +131,6 @@ enum ERRORS ResizeUp(Stack_t *stk)
     int cap = stk->capacity;
     void *dataNew = realloc(stk->canaryL, sizeof(StackElem_t) * (cap * 2) + 16);
 
-    fprintf(stderr, "ERROR\n\n");
     if(dataNew == NULL)
     {
         printf(RED "\nCant resize up stack\n\n" RESET);
