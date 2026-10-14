@@ -1,36 +1,6 @@
 #include "../Headers/dump.h"
 
-const double EPSILON = 0.0001;
-
-#ifndef STACK_T_DOUBLE
-bool IsValuePoisonCI(Stack_t stk, StackElem_t value)
-{
-    if(value == stk.poison_v)
-        return true;
-    return false;
-}
-#endif
-
-#ifdef STACK_T_DOUBLE
-bool IsValuePoisonD(Stack_t stk, StackElem_t value)
-{
-    if(isnan(stk.poison_v) && isnan(value))
-        return true;
-    else if(IsZero(stk.poison_v, value))
-        return true;
-    return false;
-}
-
-bool IsZero(StackElem_t a, StackElem_t b)
-{
-    if(a - b < EPSILON || b - a < EPSILON)
-    return true;
-    return false;
-}
-#endif
-
-//CID - CHAR or INT or DOUBLE
-int StackDumpCID(Stack_t *stk)
+int StackDump(Stack_t *stk)
 {
     printf(YELLOW "\n\nDEBUG |Index|     Pointer      |      Value\n");
     CANARY_PROTECTION(

@@ -1,4 +1,4 @@
-#include "../Headers/stack.h"
+#include "../Stack_lib/Headers/stack.h"
 #include "../Headers/assembler.h"
 #include "../Headers/processor_func.h"
 

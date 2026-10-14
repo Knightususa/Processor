@@ -1,6 +1,6 @@
 #include "../Headers/common.h"
 #include "../Headers/assembler.h"
-#include "../Headers/stack.h"
+#include "../Stack_lib/Headers/stack.h"
 #include "../Headers/processor_func.h"
 
 #include <string.h>
@@ -32,7 +32,7 @@ ByteCodeStruct ReadFile(char *fileName)
     SetPointerArr(stringText, fileSize, pointerArr);
 //---------------------------------------------- 
 //TODO: divide to funcs
-//TODO: array of sstruct
+//TODO: array of struct
     ByteCodeStruct byteCodeStruct;
     byteCodeStruct.nCommands = nlines;
     byteCodeStruct.size = (sizeof(StackElem_t) + CommandMaxLen) * nlines;

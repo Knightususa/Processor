@@ -1,6 +1,26 @@
 #include "../Headers/stack.h"
 
-enum ERRORS StackInit(Stack_t *stk)
+
+const double EPSILON = 0.0001;
+
+bool IsValuePoison(Stack_t stk, StackElem_t value)
+{
+    if(isnan(stk.poison_v) && isnan(value))
+        return true;
+    else if(IsZero(stk.poison_v, value))
+        return true;
+    return false;
+}
+
+bool IsZero(StackElem_t a, StackElem_t b)
+{
+    if(a - b < EPSILON || b - a < EPSILON)
+    return true;
+    return false;
+}
+
+
+enum ERRORS_STACK StackInit(Stack_t *stk)
 {
     if (stk->capacity <= 0)
     {
@@ -34,13 +54,13 @@ enum ERRORS StackInit(Stack_t *stk)
     yaissert(StackDump(stk));
     printf(MAGENTA "\nCreate and initialize stack successfully\n\n" RESET);
 
-    return noErr;
+    return stackNoErr;
 }
 
-enum ERRORS StackDestroy(Stack_t *stk)
+enum ERRORS_STACK StackDestroy(Stack_t *stk)
 {
-    enum ERRORS checkStack = CheckStack(*stk);
-    if(checkStack != noErr)
+    enum ERRORS_STACK checkStack = CheckStack(*stk);
+    if(checkStack != stackNoErr)
     {
         printf(RED " when trying to destroy\n\n" RESET);
         yaissert(StackDump(stk));
@@ -61,19 +81,19 @@ enum ERRORS StackDestroy(Stack_t *stk)
                     stk->hashStack = CalculateHashStack(*stk);)
 
     // printf(MAGENTA "\nDestroy stack successfully\n\n" RESET);
-    return noErr;
+    return stackNoErr;
 }
 
-enum ERRORS StackPush(Stack_t *stk, StackElem_t elem)
+enum ERRORS_STACK StackPush(Stack_t *stk, StackElem_t elem)
 {
-    enum ERRORS checkStack = CheckStack(*stk);
-    if(checkStack != noErr)
+    enum ERRORS_STACK checkStack = CheckStack(*stk);
+    if(checkStack != stackNoErr)
     {
         printf(RED " when trying to push\n\n" RESET);
         yaissert(StackDump(stk));
         return checkStack;
     }
-    enum ERRORS resizeUp = noErr;
+    enum ERRORS_STACK resizeUp = stackNoErr;
     
     if (stk->size == stk->capacity)
         resizeUp = ResizeUp(stk);
@@ -90,10 +110,10 @@ enum ERRORS StackPush(Stack_t *stk, StackElem_t elem)
     return resizeUp;
 }
 
-enum ERRORS StackPop(Stack_t *stk, StackElem_t *popValue)
+enum ERRORS_STACK StackPop(Stack_t *stk, StackElem_t *popValue)
 {
-    enum ERRORS checkStack = CheckStack(*stk);
-    if(checkStack != noErr)
+    enum ERRORS_STACK checkStack = CheckStack(*stk);
+    if(checkStack != stackNoErr)
     {
         printf(RED " when trying to pop\n\n" RESET);
         yaissert(StackDump(stk));
@@ -116,12 +136,12 @@ enum ERRORS StackPop(Stack_t *stk, StackElem_t *popValue)
 
     // printf(MAGENTA "\nSuccessfully poped\n\n" RESET);
 
-    enum ERRORS resizeDown = ResizeDown(stk);
+    enum ERRORS_STACK resizeDown = ResizeDown(stk);
 
     return resizeDown;
 }
 
-enum ERRORS ResizeUp(Stack_t *stk)
+enum ERRORS_STACK ResizeUp(Stack_t *stk)
 {
     if(stk->data == NULL)
     {
@@ -129,7 +149,9 @@ enum ERRORS ResizeUp(Stack_t *stk)
         return stackNoResize;
     }
     int cap = stk->capacity;
-    void *dataNew = realloc(stk->canaryL, sizeof(StackElem_t) * (cap * 2) + 16);
+    void *dataOld = stk->data;
+    CANARY_PROTECTION(dataOld = stk->canaryL;)
+    void *dataNew = realloc(dataOld, sizeof(StackElem_t) * (cap * 2) + 16);
 
     if(dataNew == NULL)
     {
@@ -154,15 +176,17 @@ enum ERRORS ResizeUp(Stack_t *stk)
                     stk->hashStack = CalculateHashStack(*stk);)
 
     // printf(MAGENTA "\nResize up stack\n\n" RESET);
-    return noErr;
+    return stackNoErr;
 }
 
-enum ERRORS ResizeDown(Stack_t *stk)
+enum ERRORS_STACK ResizeDown(Stack_t *stk)
 {
     if(stk->capacity <= stk->size * 4)
-        return noErr;
+        return stackNoErr;
 
-    void *dataNew = realloc(stk->canaryL, sizeof(StackElem_t) * (stk->capacity / 2) + 16);
+    void *dataOld = stk->data;
+    CANARY_PROTECTION(dataOld = stk->canaryL;)
+    void *dataNew = realloc(dataOld, sizeof(StackElem_t) * (stk->capacity / 2) + 16);
     if(dataNew == NULL)
     {
         printf(RED "\nCant resize down stack\n\n" RESET);
@@ -176,7 +200,7 @@ enum ERRORS ResizeDown(Stack_t *stk)
                     stk->hashStack = CalculateHashStack(*stk);)
 
     // printf(MAGENTA "\nResize down stack\n\n" RESET);
-    return noErr;
+    return stackNoErr;
 }
 
 bool Verificator(Stack_t *stk)
@@ -225,12 +249,12 @@ bool Verificator(Stack_t *stk)
     return true;
 }
 
-enum ERRORS CheckStack(Stack_t stk)
+enum ERRORS_STACK CheckStack(Stack_t stk)
 {
     if(stk.data == NULL)
     {
         printf(RED "\nPointer to data is NULL" RESET);
-        return dataPointerNull;
+        return stackDataPointerNull;
     }
 
     CANARY_PROTECTION(
@@ -270,7 +294,7 @@ enum ERRORS CheckStack(Stack_t stk)
         printf(RED "\nHash of stack incorrect, stack may be edited" RESET);
         return hashStackIncorrect;
     })//end HASH_PROTECTION
-    return noErr;
+    return stackNoErr;
 }
 
 CANARY_PROTECTION(
@@ -308,9 +332,12 @@ unsigned long long CalculateHashData(Stack_t stk)
 unsigned long long CalculateHashStack(Stack_t stk)
 {
     unsigned long long hash = 5381;
+
+    CANARY_PROTECTION(
     EditHash(&hash, (unsigned long long) stk.arbusDefault);
     EditHash(&hash, (unsigned long long) stk.arbusL);
-    EditHash(&hash, (unsigned long long) stk.arbusR);
+    EditHash(&hash, (unsigned long long) stk.arbusR);)
+
     EditHash(&hash, (unsigned long long) stk.capacity);
     EditHash(&hash, (unsigned long long) stk.data);
     EditHash(&hash, (unsigned long long) stk.hashData);

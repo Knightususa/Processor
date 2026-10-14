@@ -5,7 +5,7 @@
 #include <math.h>
 
 #include "./common.h"
-#include "./stack.h"
+#include "../Stack_lib/Headers/dump.h"
 #include "./assembler.h"
 
 
@@ -23,7 +23,7 @@ typedef struct
     COMMAND_INDEX index;
     const char *name;
     int args;
-    enum ERRORS (*function)(ProcessorStruct *);
+    enum ERRORS_PROCESSOR (*function)(ProcessorStruct *);
 }Command;
 
 extern const Command commands_[];  
@@ -37,26 +37,27 @@ void ProcessorRegistersInit(ProcessorStruct *proc);
 
 void *MakeElemFromByteCode(ProcessorStruct *proc, size_t size);
 
-enum ERRORS ProcessorHlt(ProcessorStruct *proc);
+enum ERRORS_PROCESSOR ProcessorHlt(ProcessorStruct *proc);
 
-enum ERRORS ProcessorPush(ProcessorStruct *proc);
-enum ERRORS ProcessorOut(ProcessorStruct *proc);
+enum ERRORS_PROCESSOR ProcessorPush(ProcessorStruct *proc);
+enum ERRORS_PROCESSOR ProcessorOut(ProcessorStruct *proc);
 
-enum ERRORS ProcessorPusr(ProcessorStruct *proc);
-enum ERRORS ProcessorPopr(ProcessorStruct *proc);
+enum ERRORS_PROCESSOR ProcessorPusr(ProcessorStruct *proc);
+enum ERRORS_PROCESSOR ProcessorPopr(ProcessorStruct *proc);
 
-enum ERRORS ProcessorAdd(ProcessorStruct *proc);
-enum ERRORS ProcessorSub(ProcessorStruct *proc);
-enum ERRORS ProcessorDiv(ProcessorStruct *proc);
-enum ERRORS ProcessorMul(ProcessorStruct *proc);
-enum ERRORS ProcessorSqrt(ProcessorStruct *proc);
+enum ERRORS_PROCESSOR ProcessorAdd(ProcessorStruct *proc);
+enum ERRORS_PROCESSOR ProcessorSub(ProcessorStruct *proc);
+enum ERRORS_PROCESSOR ProcessorDiv(ProcessorStruct *proc);
+enum ERRORS_PROCESSOR ProcessorMul(ProcessorStruct *proc);
+enum ERRORS_PROCESSOR ProcessorSqrt(ProcessorStruct *proc);
 
-enum ERRORS ProcessorJmp(ProcessorStruct *proc);
-enum ERRORS ProcessorJe(ProcessorStruct *proc);
-enum ERRORS ProcessorJa(ProcessorStruct *proc);
-enum ERRORS ProcessorJae(ProcessorStruct *proc);
-enum ERRORS ProcessorJb(ProcessorStruct *proc);
-enum ERRORS ProcessorJbe(ProcessorStruct *proc);
+enum ERRORS_PROCESSOR ProcessorJmp(ProcessorStruct *proc);
+enum ERRORS_PROCESSOR ProcessorJe(ProcessorStruct *proc);
+enum ERRORS_PROCESSOR ProcessorJne(ProcessorStruct *proc);
+enum ERRORS_PROCESSOR ProcessorJa(ProcessorStruct *proc);
+enum ERRORS_PROCESSOR ProcessorJae(ProcessorStruct *proc);
+enum ERRORS_PROCESSOR ProcessorJb(ProcessorStruct *proc);
+enum ERRORS_PROCESSOR ProcessorJbe(ProcessorStruct *proc);
 
-enum ERRORS ProcessorNotComm(ProcessorStruct *proc);
+enum ERRORS_PROCESSOR ProcessorNotComm(ProcessorStruct *proc);
 #endif
