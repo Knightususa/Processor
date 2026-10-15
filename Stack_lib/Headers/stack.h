@@ -11,8 +11,8 @@
 #include <assert.h>
 #include <errno.h>
 
-#include "./common.h"
 #include "./stack_global.h"
+#include "./common.h"
 #include "./dump.h"
 
 bool Verificator(Stack_t *stack);

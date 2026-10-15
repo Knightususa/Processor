@@ -1,7 +1,7 @@
 #include "../Headers/stack.h"
 
 
-const double EPSILON = 0.0001;
+const double EPSILON = 0.001;
 
 bool IsValuePoison(Stack_t stk, StackElem_t value)
 {
@@ -14,14 +14,34 @@ bool IsValuePoison(Stack_t stk, StackElem_t value)
 
 bool IsZero(StackElem_t a, StackElem_t b)
 {
-    if(a - b < EPSILON || b - a < EPSILON)
-    return true;
+    if(fabs(a - b) < EPSILON)
+        return true;
     return false;
 }
 
 
 enum ERRORS_STACK StackInit(Stack_t *stk)
 {
+    *stk =
+    {
+        CANARY_PROTECTION(.arbusL = 0,
+                          .arbusDefault = ArbusDefault,)
+        .size = -1,
+        .capacity = 1,
+        .data = NULL,
+        .poison_v = POISON_V
+        CANARY_PROTECTION(,
+                          .canaryL = NULL,
+                          .canaryR = NULL,
+                          .canaryDefault = CanaryDefault)
+        HASH_PROTECTION(,
+                        .hashData = 0,
+                        .hashStack = 0)
+        CANARY_PROTECTION(,
+                          .arbusR = 0,)
+    };
+
+
     if (stk->capacity <= 0)
     {
         printf(RED "\nCapacity must be > 0\n" RESET);
@@ -180,7 +200,7 @@ enum ERRORS_STACK ResizeUp(Stack_t *stk)
 
 enum ERRORS_STACK ResizeDown(Stack_t *stk)
 {
-    if(stk->capacity <= stk->size * 4)
+    if(stk->capacity <= stk->size * 4 || stk->capacity == 1)
         return stackNoErr;
 
     void *dataOld = stk->data;

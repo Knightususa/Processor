@@ -18,26 +18,26 @@ ByteCodeStruct ReadFile(char *fileName)
     struct stat fileStat = {};
     fstat(fileno(pFile), &fileStat);
     size_t fileSize = fileStat.st_size;
-
+    
     // printf("Size of file = " RED "%lli bytes\n\n\n" RESET, fileSize);
     char *stringText = (char *)safe_calloc((size_t)fileSize + 1, sizeof(char));
-
+    
     size_t nReadBytes = safe_fread((void *) stringText, sizeof(char), fileSize, pFile);
     warning (nReadBytes == fileSize, "nReadBytes not equals fileSize");
     yaissert(nReadBytes == fileSize);
-
+    
     size_t nlines = ReplaceRNto0(stringText, fileSize);
     
     char **pointerArr = (char **)safe_calloc((size_t)nlines, sizeof(char *));;
     SetPointerArr(stringText, fileSize, pointerArr);
-//---------------------------------------------- 
-//TODO: divide to funcs
-//TODO: array of struct
+    //---------------------------------------------- 
+    //TODO: divide to funcs
+    //TODO: array of struct
     ByteCodeStruct byteCodeStruct;
     byteCodeStruct.nCommands = nlines;
     byteCodeStruct.size = (sizeof(StackElem_t) + CommandMaxLen) * nlines;
     byteCodeStruct.byteCode = (unsigned char*) safe_calloc(byteCodeStruct.size, sizeof(unsigned char));
-
+    
     size_t *labels = (size_t *)safe_calloc(sizeof(size_t), number_of_labels);
     size_t indexByteCode = 0;
     for(int j = 0; j < 2; j++)

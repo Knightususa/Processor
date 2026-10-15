@@ -11,19 +11,8 @@
 #define CYAN    "\033[36m"
 #define WHITE   "\033[37m"
 
-const unsigned long long ArbusDefault = 0xDEDC0CA1;
-const unsigned long long CanaryDefault = 0xDEDC0CA1DEDC0CA1;
-
 const int CommandMaxLen = 4; 
 const int ArgumentMaxLen = 32; 
-
-
-typedef struct
-{
-    int int_v;
-    char char_v;
-    double double_v;
-}Struction;
 
 enum ERRORS_PROCESSOR
 {
@@ -32,7 +21,8 @@ enum ERRORS_PROCESSOR
     procCantSub,
     procCantDiv,
     procCantMul,
-    procCantJump,
+    procCantJmp,
+    procCantIn,
     procNoErr
 };
 
@@ -69,7 +59,11 @@ enum COMMAND_INDEX
     jb_index      = 15,
     jbe_index     = 16,
 
-    notcomm_index = 17
+    in_index      = 17,
+    call_index    = 18,
+    ret_index     = 19,
+
+    notcomm_index = 20
 };
 
 #endif

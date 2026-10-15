@@ -14,6 +14,7 @@ typedef struct
     ByteCodeStruct byteCodeStruct;
     StackElem_t *registers;
     Stack_t *stk;
+    Stack_t *stkRet;
     size_t ip;//instruction pointer
 }ProcessorStruct;
 
@@ -60,6 +61,10 @@ enum ERRORS_PROCESSOR ProcessorJa(ProcessorStruct *proc);
 enum ERRORS_PROCESSOR ProcessorJae(ProcessorStruct *proc);
 enum ERRORS_PROCESSOR ProcessorJb(ProcessorStruct *proc);
 enum ERRORS_PROCESSOR ProcessorJbe(ProcessorStruct *proc);
+
+enum ERRORS_PROCESSOR ProcessorIn(ProcessorStruct *proc);
+enum ERRORS_PROCESSOR ProcessorCall(ProcessorStruct *proc);
+enum ERRORS_PROCESSOR ProcessorRet(ProcessorStruct *proc);
 
 enum ERRORS_PROCESSOR ProcessorNotComm(ProcessorStruct *proc);
 #endif

@@ -11,6 +11,9 @@
 #define CYAN    "\033[36m"
 #define WHITE   "\033[37m"
 
+const unsigned long long ArbusDefault = 0xDEDC0CA1;
+const unsigned long long CanaryDefault = 0xDEDC0CA1DEDC0CA1;
+
 typedef double StackElem_t;
 #define POISON_V NAN
 #define PRINTF_T "lg"

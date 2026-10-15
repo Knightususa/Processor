@@ -29,6 +29,10 @@ const Command commands_[] =
     {.index = jb_index,      .name = "JB",   .args = 1, .function = *ProcessorJb},
     {.index = jbe_index,     .name = "JBE",  .args = 1, .function = *ProcessorJbe},
 
+    {.index = in_index,      .name = "IN",   .args = 0, .function = *ProcessorIn},
+    {.index = call_index,    .name = "CALL", .args = 1, .function = *ProcessorCall},
+    {.index = ret_index,     .name = "RET",  .args = 0, .function = *ProcessorRet},
+
     {.index = notcomm_index, .name = "NOTC",  .args = 0, .function = *ProcessorNotComm},
 };
 const size_t number_of_commands_ = sizeof(commands_) / sizeof(commands_[0]);
@@ -41,10 +45,10 @@ void RunProcessor(ByteCodeStruct byteCodeStruct, Stack_t *stk)
     ProcessorStruct *proc = ProcessorStructInit(byteCodeStruct, stk);
     while(proc->ip < byteCodeStruct.size)
     {
-        PrintProcessor(proc);
         COMMAND_INDEX index = (COMMAND_INDEX)proc->byteCodeStruct.byteCode[proc->ip];
+        printf(CYAN "%s\n\n" RESET, commands_[index].name);
         commands_[index].function(proc);
-        // printf("%s\n", commands_[index].name);
+        PrintProcessor(proc);
         // yaissert(StackDump(proc->stk));
     }
 }
@@ -53,7 +57,6 @@ void PrintProcessor(ProcessorStruct *proc)
 {
     size_t size = proc->byteCodeStruct.size;
     size_t ip = proc->ip;
-    printf("ip = %i\n", ip);
     size_t n = number_of_elem_on_line;
     for(size_t i = 0; i < size; i++)
     {
@@ -93,6 +96,8 @@ ProcessorStruct *ProcessorStructInit(ByteCodeStruct byteCodeStruct, Stack_t *stk
     ProcessorStruct *proc = (ProcessorStruct *)safe_calloc(sizeof(ProcessorStruct), 1);
     proc->byteCodeStruct = byteCodeStruct;
     proc->stk = stk;
+    proc->stkRet = (Stack_t *)safe_calloc(sizeof(Stack_t), 1);
+    StackInit(proc->stkRet);
     proc->ip = 0;
     ProcessorRegistersInit(proc);
     return proc;
@@ -114,6 +119,7 @@ enum ERRORS_PROCESSOR ProcessorHlt(ProcessorStruct *proc)
 enum ERRORS_PROCESSOR ProcessorNotComm(ProcessorStruct *proc)
 {
     proc->ip++;
+    printf("Its not a command\n");
     return procNoErr;
 }
 
@@ -275,18 +281,18 @@ enum ERRORS_PROCESSOR ProcessorJe(ProcessorStruct *proc)
     if(size < 2)
     {
         printf("Too few elements for make compare\n\n" RESET);
-        proc->ip++;
-        return procCantJump;
+        proc->ip += 1 + sizeof(size_t);
+        return procCantJmp;
     }
-    StackElem_t elem1, elem2;
+    StackElem_t elem1 = 0, elem2 = 1;
     StackPop(proc->stk, &elem1);
     StackPop(proc->stk, &elem2);
-
+    
     bool equ = IsZero(elem1, elem2);
     if(equ)
         ProcessorJmp(proc);
     else
-        proc->ip++;
+        proc->ip += 1 + sizeof(size_t);
     return procNoErr;
 }
 
@@ -297,8 +303,8 @@ enum ERRORS_PROCESSOR ProcessorJne(ProcessorStruct *proc)
     if(size < 2)
     {
         printf("Too few elements for make compare\n\n" RESET);
-        proc->ip++;
-        return procCantJump;
+        proc->ip += 1 + sizeof(size_t);
+        return procCantJmp;
     }
     StackElem_t elem1, elem2;
     StackPop(proc->stk, &elem1);
@@ -308,7 +314,7 @@ enum ERRORS_PROCESSOR ProcessorJne(ProcessorStruct *proc)
     if(equ)
         ProcessorJmp(proc);
     else
-        proc->ip++;
+        proc->ip += 1 + sizeof(size_t);
     return procNoErr;
 }
 
@@ -318,8 +324,8 @@ enum ERRORS_PROCESSOR ProcessorJa(ProcessorStruct *proc)
     if(size < 2)
     {
         printf("Too few elements for make compare\n\n" RESET);
-        proc->ip++;
-        return procCantJump;
+        proc->ip += 1 + sizeof(size_t);
+        return procCantJmp;
     }
     StackElem_t elem1, elem2;
     StackPop(proc->stk, &elem1);
@@ -329,7 +335,7 @@ enum ERRORS_PROCESSOR ProcessorJa(ProcessorStruct *proc)
     if(equ)
         ProcessorJmp(proc);
     else
-        proc->ip++;
+        proc->ip += 1 + sizeof(size_t);
     return procNoErr;
 }
 
@@ -339,8 +345,8 @@ enum ERRORS_PROCESSOR ProcessorJae(ProcessorStruct *proc)
     if(size < 2)
     {
         printf("Too few elements for make compare\n\n" RESET);
-        proc->ip++;
-        return procCantJump;
+        proc->ip += 1 + sizeof(size_t);
+        return procCantJmp;
     }
     StackElem_t elem1, elem2;
     StackPop(proc->stk, &elem1);
@@ -350,7 +356,7 @@ enum ERRORS_PROCESSOR ProcessorJae(ProcessorStruct *proc)
     if(equ)
         ProcessorJmp(proc);
     else
-        proc->ip++;
+        proc->ip += 1 + sizeof(size_t);
     return procNoErr;
 }
 
@@ -360,8 +366,8 @@ enum ERRORS_PROCESSOR ProcessorJb(ProcessorStruct *proc)
     if(size < 2)
     {
         printf("Too few elements for make compare\n\n" RESET);
-        proc->ip++;
-        return procCantJump;
+        proc->ip += 1 + sizeof(size_t);
+        return procCantJmp;
     }
     StackElem_t elem1, elem2;
     StackPop(proc->stk, &elem1);
@@ -371,7 +377,7 @@ enum ERRORS_PROCESSOR ProcessorJb(ProcessorStruct *proc)
     if(equ)
         ProcessorJmp(proc);
     else
-        proc->ip++;
+        proc->ip += 1 + sizeof(size_t);
     return procNoErr;
 }
 
@@ -381,8 +387,8 @@ enum ERRORS_PROCESSOR ProcessorJbe(ProcessorStruct *proc)
     if(size < 2)
     {
         printf("Too few elements for make compare\n\n" RESET);
-        proc->ip++;
-        return procCantJump;
+        proc->ip += 1 + sizeof(size_t);
+        return procCantJmp;
     }
     StackElem_t elem1, elem2;
     StackPop(proc->stk, &elem1);
@@ -392,6 +398,43 @@ enum ERRORS_PROCESSOR ProcessorJbe(ProcessorStruct *proc)
     if(equ)
         ProcessorJmp(proc);
     else
-        proc->ip++;
+        proc->ip += 1 + sizeof(size_t);
+    return procNoErr;
+}
+
+
+enum ERRORS_PROCESSOR ProcessorIn(ProcessorStruct *proc)
+{
+    proc->ip++;
+
+    printf("Enter number that push in stack: ");
+    StackElem_t inArg = 0;
+    int nInput = scanf("%" PRINTF_T, &inArg);
+    printf("\n");
+    if(nInput <= 0)
+    {
+        printf("Entered not a number\n\n" RESET);
+        proc->ip += 1 + sizeof(size_t);
+        return procCantIn;
+    }
+    StackPush(proc->stk, inArg);
+    return procNoErr;
+}
+
+enum ERRORS_PROCESSOR ProcessorCall(ProcessorStruct *proc)
+{
+    proc->ip++;
+    size_t indexToGo = *(size_t *)MakeElemFromByteCode(proc, sizeof(size_t));
+    size_t indexToRet = proc->ip;
+    StackPush(proc->stkRet, (StackElem_t)indexToRet);
+    proc->ip = indexToGo;
+    return procNoErr;
+}
+
+enum ERRORS_PROCESSOR ProcessorRet(ProcessorStruct *proc)
+{
+    StackElem_t elemThatPoped = 4;
+    StackPop(proc->stkRet, &elemThatPoped);
+    proc->ip = (size_t)elemThatPoped;
     return procNoErr;
 }
