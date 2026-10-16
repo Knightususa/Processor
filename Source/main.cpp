@@ -5,7 +5,6 @@
 
 main()
 {
-    Stack_t stk = {};
     // char fileName[]  = "./Code_txt/PrintSquare.txt";
     // char fileName1[] = "./Code_bin/PrintSquare.bin";
 
@@ -20,6 +19,5 @@ main()
 
     ByteCodeStruct byteCodeStruct = ReadFile(fileName);
     WriteByteCode(fileName1, byteCodeStruct);
-    StackInit(&stk);
-    RunProcessor(byteCodeStruct, &stk);
+    RunProcessor(byteCodeStruct);
 }

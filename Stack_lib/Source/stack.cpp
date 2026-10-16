@@ -26,7 +26,7 @@ enum ERRORS_STACK StackInit(Stack_t *stk)
     {
         CANARY_PROTECTION(.arbusL = 0,
                           .arbusDefault = ArbusDefault,)
-        .size = -1,
+        .size = 0,
         .capacity = 1,
         .data = NULL,
         .poison_v = POISON_V
@@ -62,8 +62,6 @@ enum ERRORS_STACK StackInit(Stack_t *stk)
                       *stk->canaryL = stk->canaryDefault;
                       stk->data    = stk->data + sizeof(unsigned long long) / sizeof(StackElem_t);
                       MakeCanaryEnd(stk);)
-    
-    stk->size = 0;
 
     for (int i = 0; i < stk->capacity; i++)
         stk->data[i] = stk->poison_v;
@@ -106,17 +104,19 @@ enum ERRORS_STACK StackDestroy(Stack_t *stk)
 enum ERRORS_STACK StackPush(Stack_t *stk, StackElem_t elem)
 {
     enum ERRORS_STACK checkStack = CheckStack(*stk);
+    yaissert(Verificator(stk));
     if(checkStack != stackNoErr)
     {
         printf(RED " when trying to push\n\n" RESET);
         yaissert(StackDump(stk));
         return checkStack;
     }
-    enum ERRORS_STACK resizeUp = stackNoErr;
     
+    enum ERRORS_STACK resizeUp = stackNoErr;
+
     if (stk->size == stk->capacity)
         resizeUp = ResizeUp(stk);
-    
+
     if(resizeUp == stackOverflow)
         return stackOverflow;
     
@@ -132,13 +132,13 @@ enum ERRORS_STACK StackPush(Stack_t *stk, StackElem_t elem)
 enum ERRORS_STACK StackPop(Stack_t *stk, StackElem_t *popValue)
 {
     enum ERRORS_STACK checkStack = CheckStack(*stk);
+    yaissert(Verificator(stk));
     if(checkStack != stackNoErr)
     {
         printf(RED " when trying to pop\n\n" RESET);
         yaissert(StackDump(stk));
         return checkStack;
     }
-
     if (stk->size <= 0)
     {
         printf(RED "\nStack underflow\n\n" RESET);
@@ -162,16 +162,25 @@ enum ERRORS_STACK StackPop(Stack_t *stk, StackElem_t *popValue)
 
 enum ERRORS_STACK ResizeUp(Stack_t *stk)
 {
+    enum ERRORS_STACK checkStack = CheckStack(*stk);
+    yaissert(Verificator(stk));
+    if(checkStack != stackNoErr)
+    {
+        printf(RED " when trying to resize up\n\n" RESET);
+        yaissert(StackDump(stk));
+        return checkStack;
+    }
+
     if(stk->data == NULL)
     {
         printf("Pointer to data is null ");
         return stackNoResize;
     }
     int cap = stk->capacity;
-    void *dataOld = stk->data;
-    CANARY_PROTECTION(dataOld = stk->canaryL;)
+    void *dataOld = (void *)stk->data;
+    CANARY_PROTECTION(dataOld = (void *)stk->canaryL;)
     void *dataNew = realloc(dataOld, sizeof(StackElem_t) * (cap * 2) + 16);
-
+    
     if(dataNew == NULL)
     {
         printf(RED "\nCant resize up stack\n\n" RESET);
@@ -200,11 +209,20 @@ enum ERRORS_STACK ResizeUp(Stack_t *stk)
 
 enum ERRORS_STACK ResizeDown(Stack_t *stk)
 {
+    enum ERRORS_STACK checkStack = CheckStack(*stk);
+    yaissert(Verificator(stk));
+    if(checkStack != stackNoErr)
+    {
+        printf(RED " when trying to resize down\n\n" RESET);
+        yaissert(StackDump(stk));
+        return checkStack;
+    }
+
     if(stk->capacity <= stk->size * 4 || stk->capacity == 1)
         return stackNoErr;
 
-    void *dataOld = stk->data;
-    CANARY_PROTECTION(dataOld = stk->canaryL;)
+    void *dataOld = (void *)stk->data;
+    CANARY_PROTECTION(dataOld = (void *)stk->canaryL;)
     void *dataNew = realloc(dataOld, sizeof(StackElem_t) * (stk->capacity / 2) + 16);
     if(dataNew == NULL)
     {
@@ -214,6 +232,11 @@ enum ERRORS_STACK ResizeDown(Stack_t *stk)
 
     stk->data = (StackElem_t *) dataNew;
     stk->capacity /= 2;
+
+    CANARY_PROTECTION(stk->canaryL = (unsigned long long *) stk->data;
+                      *stk->canaryL = stk->canaryDefault;
+                      stk->data    = stk->data + sizeof(unsigned long long) / sizeof(StackElem_t);
+                      MakeCanaryEnd(stk);)
 
     HASH_PROTECTION(stk->hashData = CalculateHashData(*stk);
                     stk->hashStack = CalculateHashStack(*stk);)
@@ -319,7 +342,7 @@ enum ERRORS_STACK CheckStack(Stack_t stk)
 CANARY_PROTECTION(
 void MakeCanaryEnd(Stack_t *stk)
 {   
-    stk->canaryR = (unsigned long long *) & (stk->data[stk->capacity]);
+    stk->canaryR = (unsigned long long *)(&(stk->data[stk->capacity]));
     for(int i = 0; i < 8; i++)
     {
         unsigned char mask = (unsigned char)(((stk->canaryDefault) >> 8 * i) & 0xFF);

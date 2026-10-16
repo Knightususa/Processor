@@ -5,51 +5,15 @@
 // TODO: {name "push", enum PUSH, args=1, pointerToFunc}
 //       {name "pop",  enum POP,  args=0}
 
-const Command commands_[] = 
+void RunProcessor(ByteCodeStruct byteCodeStruct)
 {
-    {.index = hlt_index,     .name = "HLT",  .args = 0, .function = *ProcessorHlt},
-
-    {.index = push_index,    .name = "PUSH", .args = 1, .function = *ProcessorPush},
-    {.index = out_index,     .name = "OUT",  .args = 0, .function = *ProcessorOut},
-
-    {.index = pusr_index,    .name = "PUSR", .args = 1, .function = *ProcessorPusr},
-    {.index = popr_index,    .name = "POPR", .args = 1, .function = *ProcessorPopr},
-
-    {.index = add_index,     .name = "ADD",  .args = 0, .function = *ProcessorAdd},
-    {.index = sub_index,     .name = "SUB",  .args = 0, .function = *ProcessorSub},
-    {.index = div_index,     .name = "DIV",  .args = 0, .function = *ProcessorDiv},
-    {.index = mul_index,     .name = "MUL",  .args = 0, .function = *ProcessorMul},
-    {.index = sqrt_index,    .name = "SQRT", .args = 0, .function = *ProcessorSqrt},
-
-    {.index = jmp_index,     .name = "JMP",  .args = 1, .function = *ProcessorJmp},
-    {.index = je_index,      .name = "JE",   .args = 1, .function = *ProcessorJe},
-    {.index = jne_index,     .name = "JNE",  .args = 1, .function = *ProcessorJne},
-    {.index = ja_index,      .name = "JA",   .args = 1, .function = *ProcessorJa},
-    {.index = jae_index,     .name = "JAE",  .args = 1, .function = *ProcessorJae},
-    {.index = jb_index,      .name = "JB",   .args = 1, .function = *ProcessorJb},
-    {.index = jbe_index,     .name = "JBE",  .args = 1, .function = *ProcessorJbe},
-
-    {.index = in_index,      .name = "IN",   .args = 0, .function = *ProcessorIn},
-    {.index = call_index,    .name = "CALL", .args = 1, .function = *ProcessorCall},
-    {.index = ret_index,     .name = "RET",  .args = 0, .function = *ProcessorRet},
-
-    {.index = notcomm_index, .name = "NOTC",  .args = 0, .function = *ProcessorNotComm},
-};
-const size_t number_of_commands_ = sizeof(commands_) / sizeof(commands_[0]);
-
-const int number_of_registers = 10;
-const size_t number_of_elem_on_line = 20;
-
-void RunProcessor(ByteCodeStruct byteCodeStruct, Stack_t *stk)
-{
-    ProcessorStruct *proc = ProcessorStructInit(byteCodeStruct, stk);
+    ProcessorStruct *proc = ProcessorStructInit(byteCodeStruct);
     while(proc->ip < byteCodeStruct.size)
     {
         COMMAND_INDEX index = (COMMAND_INDEX)proc->byteCodeStruct.byteCode[proc->ip];
         printf(CYAN "%s\n\n" RESET, commands_[index].name);
-        commands_[index].function(proc);
         PrintProcessor(proc);
-        // yaissert(StackDump(proc->stk));
+        commands_[index].function(proc);
     }
 }
 
@@ -88,16 +52,35 @@ void PrintProcessor(ProcessorStruct *proc)
         else if((i + 1) < size - 1)
             printf(", ");
     }
-    printf("\n\n\n\n");
+    printf("\n\n--------------------REGISTERS--------------------\n[");
+    for(int i = 0; i < number_of_registers; i++)
+    {
+        printf("%" PRINTF_T, proc->registers[i]);
+        if(i < number_of_registers - 1)
+            printf(", ");
+    }
+
+    printf("]\n\n---------------------RETURNS---------------------\n[");
+    for(int i = 0; i < proc->stkRet->size; i++)
+    {
+        printf("%" PRINTF_T, proc->stkRet->data[i]);
+        if(i < proc->stkRet->size - 1)
+            printf(", ");
+    }
+    printf("]\n\n\n\n");
 }
 
-ProcessorStruct *ProcessorStructInit(ByteCodeStruct byteCodeStruct, Stack_t *stk)
+ProcessorStruct *ProcessorStructInit(ByteCodeStruct byteCodeStruct)
 {
     ProcessorStruct *proc = (ProcessorStruct *)safe_calloc(sizeof(ProcessorStruct), 1);
     proc->byteCodeStruct = byteCodeStruct;
-    proc->stk = stk;
+
+    proc->stk = (Stack_t *)safe_calloc(sizeof(Stack_t), 1);
+    StackInit(proc->stk);
+
     proc->stkRet = (Stack_t *)safe_calloc(sizeof(Stack_t), 1);
     StackInit(proc->stkRet);
+
     proc->ip = 0;
     ProcessorRegistersInit(proc);
     return proc;
@@ -153,7 +136,8 @@ enum ERRORS_PROCESSOR ProcessorOut(ProcessorStruct *proc)
 enum ERRORS_PROCESSOR ProcessorPusr(ProcessorStruct *proc)
 {
     proc->ip++;
-    int indexInRegisterArr = proc->byteCodeStruct.byteCode[proc->ip++];
+    int indexInRegisterArr = 0;
+    *((unsigned char *)&indexInRegisterArr) = proc->byteCodeStruct.byteCode[proc->ip++];
     StackElem_t elemToPush = proc->registers[indexInRegisterArr];
     StackPush(proc->stk, elemToPush);
     return procNoErr;
@@ -181,9 +165,9 @@ enum ERRORS_PROCESSOR ProcessorAdd(ProcessorStruct *proc)
         return procCantAdd;
     }
 
-    StackElem_t elem1, elem2;
-    StackPop(proc->stk, &elem1);
+    StackElem_t elem1 = 0, elem2 = 0;
     StackPop(proc->stk, &elem2);
+    StackPop(proc->stk, &elem1);
     StackElem_t sum = elem1 + elem2;
     StackPush(proc->stk, sum);
     return procNoErr;
@@ -201,9 +185,9 @@ enum ERRORS_PROCESSOR ProcessorSub(ProcessorStruct *proc)
         return procCantSub;
     }
 
-    StackElem_t elem1, elem2;
-    StackPop(proc->stk, &elem1);
+    StackElem_t elem1 = 0, elem2 = 0;
     StackPop(proc->stk, &elem2);
+    StackPop(proc->stk, &elem1);
     StackElem_t sub = elem1 - elem2;
 
     StackPush(proc->stk, sub);
@@ -221,9 +205,9 @@ enum ERRORS_PROCESSOR ProcessorDiv(ProcessorStruct *proc)
         return procCantDiv;
     }
 
-    StackElem_t elem1, elem2;
-    StackPop(proc->stk, &elem1);
+    StackElem_t elem1 = 0, elem2 = 0;
     StackPop(proc->stk, &elem2);
+    StackPop(proc->stk, &elem1);
     StackElem_t div = elem1 / elem2;
 
     StackPush(proc->stk, div);
@@ -242,9 +226,9 @@ enum ERRORS_PROCESSOR ProcessorMul(ProcessorStruct *proc)
         return procCantMul;
     }
 
-    StackElem_t elem1, elem2;
-    StackPop(proc->stk, &elem1);
+    StackElem_t elem1 = 0, elem2 = 0;
     StackPop(proc->stk, &elem2);
+    StackPop(proc->stk, &elem1);
     StackElem_t mul = elem1 * elem2;
 
     StackPush(proc->stk, mul);
@@ -260,7 +244,7 @@ enum ERRORS_PROCESSOR ProcessorSqrt(ProcessorStruct *proc)
         printf("Too few elements for sqrt\n\n" RESET);
         return procCantMul;
     }
-    StackElem_t elem1;
+    StackElem_t elem1 = 0;
     StackPop(proc->stk, &elem1);
     StackElem_t sqrt_value = sqrt(elem1);
     StackPush(proc->stk, sqrt_value);
@@ -284,7 +268,7 @@ enum ERRORS_PROCESSOR ProcessorJe(ProcessorStruct *proc)
         proc->ip += 1 + sizeof(size_t);
         return procCantJmp;
     }
-    StackElem_t elem1 = 0, elem2 = 1;
+    StackElem_t elem1 = 0, elem2 = 0;
     StackPop(proc->stk, &elem1);
     StackPop(proc->stk, &elem2);
     
@@ -306,7 +290,7 @@ enum ERRORS_PROCESSOR ProcessorJne(ProcessorStruct *proc)
         proc->ip += 1 + sizeof(size_t);
         return procCantJmp;
     }
-    StackElem_t elem1, elem2;
+    StackElem_t elem1 = 0, elem2 = 0;
     StackPop(proc->stk, &elem1);
     StackPop(proc->stk, &elem2);
 
@@ -327,7 +311,7 @@ enum ERRORS_PROCESSOR ProcessorJa(ProcessorStruct *proc)
         proc->ip += 1 + sizeof(size_t);
         return procCantJmp;
     }
-    StackElem_t elem1, elem2;
+    StackElem_t elem1 = 0, elem2 = 0;
     StackPop(proc->stk, &elem1);
     StackPop(proc->stk, &elem2);
 
@@ -348,7 +332,7 @@ enum ERRORS_PROCESSOR ProcessorJae(ProcessorStruct *proc)
         proc->ip += 1 + sizeof(size_t);
         return procCantJmp;
     }
-    StackElem_t elem1, elem2;
+    StackElem_t elem1 = 0, elem2 = 0;
     StackPop(proc->stk, &elem1);
     StackPop(proc->stk, &elem2);
 
@@ -369,7 +353,7 @@ enum ERRORS_PROCESSOR ProcessorJb(ProcessorStruct *proc)
         proc->ip += 1 + sizeof(size_t);
         return procCantJmp;
     }
-    StackElem_t elem1, elem2;
+    StackElem_t elem1 = 0, elem2 = 0;
     StackPop(proc->stk, &elem1);
     StackPop(proc->stk, &elem2);
 
@@ -390,7 +374,7 @@ enum ERRORS_PROCESSOR ProcessorJbe(ProcessorStruct *proc)
         proc->ip += 1 + sizeof(size_t);
         return procCantJmp;
     }
-    StackElem_t elem1, elem2;
+    StackElem_t elem1 = 0, elem2 = 0;
     StackPop(proc->stk, &elem1);
     StackPop(proc->stk, &elem2);
 
@@ -433,7 +417,7 @@ enum ERRORS_PROCESSOR ProcessorCall(ProcessorStruct *proc)
 
 enum ERRORS_PROCESSOR ProcessorRet(ProcessorStruct *proc)
 {
-    StackElem_t elemThatPoped = 4;
+    StackElem_t elemThatPoped = 0;
     StackPop(proc->stkRet, &elemThatPoped);
     proc->ip = (size_t)elemThatPoped;
     return procNoErr;

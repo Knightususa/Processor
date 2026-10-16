@@ -8,6 +8,51 @@
 #include "../Stack_lib/Headers/dump.h"
 #include "./assembler.h"
 
+const int CommandMaxLen = 4; 
+const int ArgumentMaxLen = 32; 
+
+enum ERRORS_PROCESSOR
+{
+     //TODO: add error assembler
+    procCantAdd,
+    procCantSub,
+    procCantDiv,
+    procCantMul,
+    procCantJmp,
+    procCantIn,
+    procNoErr
+};
+
+enum COMMAND_INDEX
+{
+    hlt_index     = 0,
+   
+    push_index    = 1,
+    out_index     = 2,
+   
+    pusr_index    = 3,
+    popr_index    = 4,
+   
+    add_index     = 5,
+    sub_index     = 6,
+    div_index     = 7,
+    mul_index     = 8,
+    sqrt_index    = 9,
+   
+    jmp_index     = 10,
+    je_index      = 11,
+    jne_index     = 12,
+    ja_index      = 13,
+    jae_index     = 14,
+    jb_index      = 15,
+    jbe_index     = 16,
+
+    in_index      = 17,
+    call_index    = 18,
+    ret_index     = 19,
+
+    notcomm_index = 20
+};
 
 typedef struct 
 {
@@ -27,14 +72,9 @@ typedef struct
     enum ERRORS_PROCESSOR (*function)(ProcessorStruct *);
 }Command;
 
-extern const Command commands_[];  
-extern const size_t number_of_commands_;
 
-extern const int number_of_registers;
-extern const size_t number_of_elem_on_line;
-
-void RunProcessor(ByteCodeStruct byteCodeStruct, Stack_t *stk);
-ProcessorStruct *ProcessorStructInit(ByteCodeStruct byteCodeStruct, Stack_t *stk);
+void RunProcessor(ByteCodeStruct byteCodeStruct);
+ProcessorStruct *ProcessorStructInit(ByteCodeStruct byteCodeStruct);
 void ProcessorRegistersInit(ProcessorStruct *proc);
 void PrintProcessor(ProcessorStruct *proc);
 
@@ -67,4 +107,40 @@ enum ERRORS_PROCESSOR ProcessorCall(ProcessorStruct *proc);
 enum ERRORS_PROCESSOR ProcessorRet(ProcessorStruct *proc);
 
 enum ERRORS_PROCESSOR ProcessorNotComm(ProcessorStruct *proc);
+
+
+const Command commands_[] = 
+{
+    {.index = hlt_index,     .name = "HLT",  .args = 0, .function = *ProcessorHlt},
+
+    {.index = push_index,    .name = "PUSH", .args = 1, .function = *ProcessorPush},
+    {.index = out_index,     .name = "OUT",  .args = 0, .function = *ProcessorOut},
+
+    {.index = pusr_index,    .name = "PUSR", .args = 1, .function = *ProcessorPusr},
+    {.index = popr_index,    .name = "POPR", .args = 1, .function = *ProcessorPopr},
+
+    {.index = add_index,     .name = "ADD",  .args = 0, .function = *ProcessorAdd},
+    {.index = sub_index,     .name = "SUB",  .args = 0, .function = *ProcessorSub},
+    {.index = div_index,     .name = "DIV",  .args = 0, .function = *ProcessorDiv},
+    {.index = mul_index,     .name = "MUL",  .args = 0, .function = *ProcessorMul},
+    {.index = sqrt_index,    .name = "SQRT", .args = 0, .function = *ProcessorSqrt},
+
+    {.index = jmp_index,     .name = "JMP",  .args = 1, .function = *ProcessorJmp},
+    {.index = je_index,      .name = "JE",   .args = 1, .function = *ProcessorJe},
+    {.index = jne_index,     .name = "JNE",  .args = 1, .function = *ProcessorJne},
+    {.index = ja_index,      .name = "JA",   .args = 1, .function = *ProcessorJa},
+    {.index = jae_index,     .name = "JAE",  .args = 1, .function = *ProcessorJae},
+    {.index = jb_index,      .name = "JB",   .args = 1, .function = *ProcessorJb},
+    {.index = jbe_index,     .name = "JBE",  .args = 1, .function = *ProcessorJbe},
+
+    {.index = in_index,      .name = "IN",   .args = 0, .function = *ProcessorIn},
+    {.index = call_index,    .name = "CALL", .args = 1, .function = *ProcessorCall},
+    {.index = ret_index,     .name = "RET",  .args = 0, .function = *ProcessorRet},
+
+    {.index = notcomm_index, .name = "NOTC",  .args = 0, .function = *ProcessorNotComm},
+};
+const size_t number_of_commands_ = sizeof(commands_) / sizeof(commands_[0]);
+
+const int number_of_registers = 10;
+const size_t number_of_elem_on_line = 20;
 #endif
