@@ -61,7 +61,8 @@ void WriteArgToByteCode(unsigned char *byteCode, size_t *indexByteCode, void *ar
 void FillLabel(CmdToWriteInfo *cmdInfo);
 void WriteCmdToBytecode(CmdToWriteInfo *cmdInfo);
 void WriteOneArgCmd(CmdToWriteInfo *cmdInfo);
-bool IsIndexPush(unsigned char index);
+void WriteIfHaveFields(CmdToWriteInfo *cmdInfo, unsigned char index);
+bool IsIndexEqual(unsigned char index1, unsigned char index2);
 
 void WriteByteCode(char *fileName, ByteCodeStruct byteCodeStruct);
 

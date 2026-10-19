@@ -205,6 +205,11 @@ void WriteArgToByteCode(unsigned char *byteCode, size_t *indexByteCode, void *ar
 
 void DivideStrToPiece(char *pointerToCmd, char *inputCommand, char *inputArg)
 {
+    // int i = 0;
+    // char tempc = pointerToCmd[i];
+    // while(tempc == ' ')
+    //     tempc = pointerToCmd[i++]; 
+    // i--;
     sscanf(pointerToCmd, "%" MAKEVALUE(CommandMaxLen) "[^[ \n] %" MAKEVALUE(ArgumentMaxLen) "[^\n]", inputCommand, inputArg);
 }
 
@@ -264,91 +269,18 @@ void WriteOneArgCmd(CmdToWriteInfo *cmdInfo)
     }
 
     index = commands_[cmdInfo->indexInCmdArr].index;
-    if(index == popr_index)
+    if(IsIndexEqual(index, push_index))
     {
-        if(cmdInfo->inputArg[1] == 'X')
-        {
-            if('A' <= cmdInfo->inputArg[0] && cmdInfo->inputArg[0] <= 'D')
-            {
-                cmdInfo->byteCode[(*cmdInfo->indexByteCode)++] = (unsigned char)index;
-
-                unsigned char registerIndex = (unsigned char) (cmdInfo->inputArg[0] - 'A');
-                cmdInfo->byteCode[(*cmdInfo->indexByteCode)++] = registerIndex;
-                return;
-            }
-        }
-        cmdInfo->byteCode[(*cmdInfo->indexByteCode)++] = (unsigned char)notcmd_index;
+        WriteIfHaveFields(cmdInfo, push_index);
+        return;
     }
 
-    if(IsIndexPush(index))
-    {   
-        char *input = cmdInfo->inputArg;
-        View indexP;
-        indexP.value = index;
-        if(cmdInfo->inputArg[0] == '[')
-        {
-            indexP.bits.b3 = 1;   
-            input += 1;
-        }
-            
-        char *firstStr = (char *)safe_calloc(ArgumentMaxLen, sizeof(char));
-        char *secondStr = (char *)safe_calloc(ArgumentMaxLen, sizeof(char));
-
-        int inputN = sscanf(input, "%[^] +]%*[^0-9]%[^] \n]", firstStr, secondStr);
-        if(inputN == 2)
-        {
-            indexP.bits.b1 = 1;
-            indexP.bits.b2 = 1;
-            cmdInfo->byteCode[(*cmdInfo->indexByteCode)++] = (unsigned char)indexP.value;
-            if(firstStr[1] == 'X')
-            {
-                if('A' <= firstStr[0] && firstStr[0] <= 'D')
-                {
-                    unsigned char registerIndex = (unsigned char) (firstStr[0] - 'A');
-                    cmdInfo->byteCode[(*cmdInfo->indexByteCode)++] = registerIndex;
-                }
-                // else
-                //     TOFILE ERROR
-                //TODO: FILE LOGS
-            }
-            // else
-            //     TOFILE ERROR
-            //TODO: FILE LOGS
-
-            StackElem_t konst = 0;
-            sscanf(secondStr, "%" PRINTF_T, &konst);//TODO: handle inputN
-            WriteArgToByteCode(cmdInfo->byteCode, cmdInfo->indexByteCode, &konst, sizeof(StackElem_t));
-            return;
-        }
-        else if(inputN == 1)
-        {
-            if(firstStr[1] == 'X')
-            {
-                indexP.bits.b2 = 1;
-                cmdInfo->byteCode[(*cmdInfo->indexByteCode)++] = (unsigned char)indexP.value;
-                if('A' <= firstStr[0] && firstStr[0] <= 'D')
-                {
-                    unsigned char registerIndex = (unsigned char) (firstStr[0] - 'A');
-                    cmdInfo->byteCode[(*cmdInfo->indexByteCode)++] = registerIndex;
-                }
-                // else
-                //     TOFILE ERROR
-                //TODO: FILE LOGS
-            }
-            else
-            {
-                indexP.bits.b1 = 1;
-                cmdInfo->byteCode[(*cmdInfo->indexByteCode)++] = (unsigned char)indexP.value;
-                StackElem_t konst = 0;
-                sscanf(firstStr, "%" PRINTF_T, &konst);//TODO: handle inputN
-                WriteArgToByteCode(cmdInfo->byteCode, cmdInfo->indexByteCode, &konst, sizeof(StackElem_t));
-            }
-            return;
-        }
-        // else
-        //     TOFILE ERROR
-        //TODO: FILE LOGS
+    if(IsIndexEqual(index, pop_index))
+    {
+        WriteIfHaveFields(cmdInfo, pop_index);
+        return;
     }
+
 
     index = notcmd_index;
     StackElem_t arg = 0;
@@ -359,11 +291,82 @@ void WriteOneArgCmd(CmdToWriteInfo *cmdInfo)
     WriteArgToByteCode(cmdInfo->byteCode, cmdInfo->indexByteCode, &arg, sizeof(StackElem_t));
 }
 
-bool IsIndexPush(unsigned char index)
+void WriteIfHaveFields(CmdToWriteInfo *cmdInfo, unsigned char index)
 {
+    char *input = cmdInfo->inputArg;
     View indexP;
     indexP.value = index;
-    if(indexP.bits.b0 == push_index)
+    if(cmdInfo->inputArg[0] == '[')
+    {
+        indexP.bits.b3 = 1;   
+        input += 1;
+    }
+        
+    char *firstStr = (char *)safe_calloc(ArgumentMaxLen, sizeof(char));
+    char *secondStr = (char *)safe_calloc(ArgumentMaxLen, sizeof(char));
+
+    int inputN = sscanf(input, "%[^] +]%*[^0-9]%[^] \n]", firstStr, secondStr);
+    if(inputN == 2)
+    {
+        indexP.bits.b1 = 1;
+        indexP.bits.b2 = 1;
+        cmdInfo->byteCode[(*cmdInfo->indexByteCode)++] = (unsigned char)indexP.value;
+        if(firstStr[1] == 'X')
+        {
+            if('A' <= firstStr[0] && firstStr[0] <= 'D')
+            {
+                unsigned char registerIndex = (unsigned char) (firstStr[0] - 'A');
+                cmdInfo->byteCode[(*cmdInfo->indexByteCode)++] = registerIndex;
+            }
+            // else
+            //     TOFILE ERROR
+            //TODO: FILE LOGS
+        }
+        // else
+        //     TOFILE ERROR
+        //TODO: FILE LOGS
+
+        StackElem_t konst = 0;
+        sscanf(secondStr, "%" PRINTF_T, &konst);//TODO: handle inputN
+        WriteArgToByteCode(cmdInfo->byteCode, cmdInfo->indexByteCode, &konst, sizeof(StackElem_t));
+        return;
+    }
+    else if(inputN == 1)
+    {
+        if(firstStr[1] == 'X')
+        {
+            indexP.bits.b2 = 1;
+            cmdInfo->byteCode[(*cmdInfo->indexByteCode)++] = (unsigned char)indexP.value;
+            if('A' <= firstStr[0] && firstStr[0] <= 'D')
+            {
+                unsigned char registerIndex = (unsigned char) (firstStr[0] - 'A');
+                cmdInfo->byteCode[(*cmdInfo->indexByteCode)++] = registerIndex;
+            }
+            // else
+            //     TOFILE ERROR
+            //TODO: FILE LOGS
+        }
+        else
+        {
+            indexP.bits.b1 = 1;
+            cmdInfo->byteCode[(*cmdInfo->indexByteCode)++] = (unsigned char)indexP.value;
+            StackElem_t konst = 0;
+            sscanf(firstStr, "%" PRINTF_T, &konst);//TODO: handle inputN
+            WriteArgToByteCode(cmdInfo->byteCode, cmdInfo->indexByteCode, &konst, sizeof(StackElem_t));
+        }
+        return;
+    }
+    // else
+    //     TOFILE ERROR
+    //TODO: FILE LOGS
+}
+
+bool IsIndexEqual(unsigned char index1, unsigned char index2)
+{
+    View indexP1, indexP2;
+    indexP1.value = index1;
+    indexP2.value = index2;
+    if(indexP1.bits.b0 == indexP2.bits.b0)
         return true;
     return false;
 }

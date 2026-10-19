@@ -1,7 +1,7 @@
 IN
-POPR AX
+POP AX
 PUSH 1
-POPR BX
+POP BX
 CALL :facktorial
 OUT
 HLT
@@ -14,12 +14,12 @@ JBE :base
 PUSH AX
 PUSH BX
 MUL
-POPR BX
+POP BX
 
 PUSH AX
 PUSH 1
 SUB
-POPR AX
+POP AX
 CALL :facktorial
 RET
 

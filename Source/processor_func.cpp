@@ -63,7 +63,7 @@ void PrintRegisters(ProcessorStruct *proc)
     printf("\n\n--------------------REGISTERS--------------------\n[");
     for(size_t i = 0; i < number_of_registers; i++)
     {
-        printf(MAGENTA "%c%c: " RESET, 'A' + (char) i, 'X');
+        printf(MAGENTA "%c%c: " RESET, (char)('A' + i), 'X');
         printf("%" PRINTF_T, proc->registers[i]);
         if(i < number_of_registers - 1)
             printf(", ");
@@ -84,20 +84,41 @@ void PrintReturns(ProcessorStruct *proc)
 
 void PrintRAM(ProcessorStruct *proc)
 {
-    printf("\n\n-----------------------RAM-----------------------\n");
-    size_t n = number_of_elem_on_line;
-    size_t size = number_of_RAM;
-    for(size_t i = 0; i < size; i++)
+    size_t n = number_of_elem_on_display;
+    size_t size1 = number_of_invisivle_RAM;
+    size_t size2 = number_of_RAM;
+    printf("\n\n-----------------------RAM (INVISIBLE PART)-----------------------\n");
+    for(size_t i = 0; i < size1; i++)
     {
         if((i + 1) % n == 1 || (i + 1) == 0)
             printf("[");
+
         printf("%02X", (unsigned int)proc->RAM[i]);
 
-        if(i == size - 1)
-            printf("]");
-
-        else if((i + 1) % n == 0 && (i + 1) > 0)
+        if (((i + 1) % n == 0 && (i + 1) > 0) || i == size1 - 1)
             printf("]\n\n");
+
+        else if (i < size1 - 1)
+            printf(", ");
+    }
+
+    printf("\n\n\n\n-----------------------RAM (VISIBLE PART)-----------------------\n");
+    for(size_t i = size1; i < size2; i++)
+    {
+        if((i + 1) % n == 1 || (i + 1) == 0)
+            printf("[");
+
+        if(isnan(proc->RAM[i]))
+            printf("*");
+
+        if(proc->RAM[i] >= 1)
+            printf("0");
+
+        if (((i + 1) % n == 0 && (i + 1) > 0) || i == size2 - 1)
+            printf("]\n\n");
+
+        else if (i < size2 - 1)
+            printf("  ");
     }
     printf("\n\n");
 }
@@ -190,14 +211,31 @@ enum ERRORS_PROCESSOR ProcessorOut(ProcessorStruct *proc)
     return procNoErr;
 }
 
-enum ERRORS_PROCESSOR ProcessorPopr(ProcessorStruct *proc)
+enum ERRORS_PROCESSOR ProcessorPop(ProcessorStruct *proc)
 {
-    proc->ip++;
+    View indexP;
+    indexP.value = proc->byteCodeStruct.byteCode[proc->ip++];
     StackElem_t elemThatPoped;
     StackPop(proc->stk, &elemThatPoped);
+    
+    StackElem_t res = 0;
+    size_t indexReg = 0;
+    if(indexP.bits.b2)
+    {
+        indexReg = proc->byteCodeStruct.byteCode[proc->ip++];
+        res += proc->registers[indexReg];
+    }
 
-    int indexInRegisterArr = proc->byteCodeStruct.byteCode[proc->ip++];
-    proc->registers[indexInRegisterArr] = elemThatPoped;
+    if(indexP.bits.b1)
+    {
+        StackElem_t elemToPush = *(StackElem_t *)MakeElemFromByteCode(proc, sizeof(StackElem_t));
+        res += elemToPush;
+    }
+
+    if(indexP.bits.b3)
+        proc->RAM[(size_t)res] = elemThatPoped;
+    else
+        proc->registers[indexReg] = elemThatPoped;
     return procNoErr;
 }
 

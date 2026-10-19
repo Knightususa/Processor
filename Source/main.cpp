@@ -14,11 +14,11 @@ main()
     // char fileName[]  = "./Code_txt/TestLabels.txt";
     // char fileName1[] = "./Code_bin/TestLabels.bin";
 
-    // char fileName[]  = "./Code_txt/Fucktorial.txt";
-    // char fileName1[] = "./Code_bin/Fucktorial.bin";
+    char fileName[]  = "./Code_txt/Fucktorial.txt";
+    char fileName1[] = "./Code_bin/Fucktorial.bin";
 
-    char fileName[]  = "./Code_txt/test1.txt";
-    char fileName1[] = "./Code_bin/test1.bin";
+    // char fileName[]  = "./Code_txt/test1.txt";
+    // char fileName1[] = "./Code_bin/test1.bin";
 
     ByteCodeStruct byteCodeStruct = ProcReadFile(fileName);
     WriteByteCode(fileName1, byteCodeStruct);

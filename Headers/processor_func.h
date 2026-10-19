@@ -27,7 +27,7 @@ enum COMMAND_INDEX
     push_index    = 1,
     out_index     = 2,
    
-    popr_index    = 3,
+    pop_index     = 3,
 
     add_index     = 4,
     sub_index     = 5,
@@ -92,7 +92,7 @@ enum ERRORS_PROCESSOR ProcessorHlt(ProcessorStruct *proc);
 enum ERRORS_PROCESSOR ProcessorPush(ProcessorStruct *proc);
 enum ERRORS_PROCESSOR ProcessorOut(ProcessorStruct *proc);
 
-enum ERRORS_PROCESSOR ProcessorPopr(ProcessorStruct *proc);
+enum ERRORS_PROCESSOR ProcessorPop(ProcessorStruct *proc);
 
 enum ERRORS_PROCESSOR ProcessorAdd(ProcessorStruct *proc);
 enum ERRORS_PROCESSOR ProcessorSub(ProcessorStruct *proc);
@@ -121,7 +121,7 @@ const Command commands_[] =
     {.index = push_index,    .name = "PUSH", .args = 1, .function = *ProcessorPush},
     {.index = out_index,     .name = "OUT",  .args = 0, .function = *ProcessorOut},
 
-    {.index = popr_index,    .name = "POPR", .args = 1, .function = *ProcessorPopr},
+    {.index = pop_index,     .name = "POP",  .args = 1, .function = *ProcessorPop},
 
     {.index = add_index,     .name = "ADD",  .args = 0, .function = *ProcessorAdd},
     {.index = sub_index,     .name = "SUB",  .args = 0, .function = *ProcessorSub},
@@ -146,9 +146,11 @@ const Command commands_[] =
 const size_t number_of_commands_ = sizeof(commands_) / sizeof(commands_[0]);
 
 const size_t number_of_registers = 10;
-const size_t number_of_RAM = 200;
+const size_t number_of_RAM = 300;
+const size_t number_of_invisivle_RAM = 100;
 
-const size_t number_of_elem_on_line = 16;//How much elem of bytecode show PrintProcessor
+const size_t number_of_elem_on_line    = 16;//How much elem of bytecode show PrintProcessor
+const size_t number_of_elem_on_display = 20;//How much elem of bytecode show PrintProcessor
 
 
 #endif
