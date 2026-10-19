@@ -11,5 +11,11 @@
 #define CYAN    "\033[36m"
 #define WHITE   "\033[37m"
 
+#define STRINGIFY(x) #x
+#define MAKEVALUE(x) STRINGIFY(x)
+
+#define CommandMaxLen  31
+#define ArgumentMaxLen 31
+
 #endif
 //end #ifndef GLOBAL_H

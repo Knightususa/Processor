@@ -17,7 +17,7 @@ main()
     char fileName[]  = "./Code_txt/Fucktorial.txt";
     char fileName1[] = "./Code_bin/Fucktorial.bin";
 
-    ByteCodeStruct byteCodeStruct = ReadFile(fileName);
+    ByteCodeStruct byteCodeStruct = ProcReadFile(fileName);
     WriteByteCode(fileName1, byteCodeStruct);
     RunProcessor(byteCodeStruct);
 }

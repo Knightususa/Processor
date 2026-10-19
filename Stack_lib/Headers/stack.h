@@ -28,7 +28,7 @@ enum ERRORS_STACK ResizeDown(Stack_t *stack);
 enum ERRORS_STACK CheckStack(Stack_t stk);    
 
 bool IsValuePoison(Stack_t stack, StackElem_t value);
-bool IsZero(StackElem_t a, StackElem_t b);
+bool IsEqual(StackElem_t a, StackElem_t b);
 
 void EditHash(unsigned long long *hash, unsigned long long value);
 

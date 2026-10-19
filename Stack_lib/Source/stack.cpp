@@ -7,12 +7,12 @@ bool IsValuePoison(Stack_t stk, StackElem_t value)
 {
     if(isnan(stk.poison_v) && isnan(value))
         return true;
-    else if(IsZero(stk.poison_v, value))
+    else if(IsEqual(stk.poison_v, value))
         return true;
     return false;
 }
 
-bool IsZero(StackElem_t a, StackElem_t b)
+bool IsEqual(StackElem_t a, StackElem_t b)
 {
     if(fabs(a - b) < EPSILON)
         return true;

@@ -2,14 +2,14 @@ IN
 POPR AX
 PUSH 1
 POPR BX
-CALL :2
+CALL :facktorial
 OUT
 HLT
 
-:2
+:facktorial
 PUSR AX
 PUSH 1
-JBE :1
+JBE :base
 
 PUSR AX
 PUSR BX
@@ -20,9 +20,9 @@ PUSR AX
 PUSH 1
 SUB
 POPR AX
-CALL :2
+CALL :facktorial
 RET
 
-:1
+:base
 PUSR BX
 RET

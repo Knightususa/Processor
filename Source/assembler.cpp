@@ -8,9 +8,8 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-const int number_of_labels = 100;
 
-ByteCodeStruct ReadFile(char *fileName)
+ByteCodeStruct ProcReadFile(char *fileName)
 {
     char mode[] = "rb";
     FILE *pFile = safe_fopen(fileName, mode);
@@ -30,30 +29,45 @@ ByteCodeStruct ReadFile(char *fileName)
     
     char **pointerArr = (char **)safe_calloc((size_t)nlines, sizeof(char *));;
     SetPointerArr(stringText, fileSize, pointerArr);
-    //---------------------------------------------- 
-    //TODO: divide to funcs
-    //TODO: array of struct
+    ByteCodeStruct byteCodeStruct = ParsTextToBytecode(nlines, pointerArr);
+    fclose(pFile);
+    return byteCodeStruct;
+}
+
+ByteCodeStruct ParsTextToBytecode(size_t nlines, char **pointerArr)
+{
     ByteCodeStruct byteCodeStruct;
     byteCodeStruct.nCommands = nlines;
     byteCodeStruct.size = (sizeof(StackElem_t) + CommandMaxLen) * nlines;
     byteCodeStruct.byteCode = (unsigned char*) safe_calloc(byteCodeStruct.size, sizeof(unsigned char));
     
-    size_t *labels = (size_t *)safe_calloc(sizeof(size_t), number_of_labels);
+    Label *labels = (Label *)safe_calloc(number_of_labels, sizeof(Label));
+    for(int i = 0; i < number_of_labels; i++)
+    {
+        labels[i].name = NULL;
+        labels[i].pointer = 0;
+    }
+
     size_t indexByteCode = 0;
     for(int j = 0; j < 2; j++)
     {
         indexByteCode = 0;
         for(size_t i = 0; i < nlines; i++)
-            TakeCommand(pointerArr[i], byteCodeStruct.byteCode, &indexByteCode, labels);
+            ParserCmdFromStr(pointerArr[i], byteCodeStruct.byteCode, &indexByteCode, labels);
+        // for(int i = 0; i < number_of_labels; i++)
+        //     if(labels[i].name != NULL) printf("Name = %s, pointer = %lli\n", labels[i].name, labels[i].pointer);
     }
+
     if(indexByteCode < byteCodeStruct.size)
     {
         byteCodeStruct.size = indexByteCode * sizeof(unsigned char);
         byteCodeStruct.byteCode = (unsigned char *)realloc(byteCodeStruct.byteCode, byteCodeStruct.size);
     }
 
-    safe_free(labels, number_of_labels * sizeof(size_t));
-    fclose(pFile);
+
+    for(int i = 0; i < number_of_labels; i++)
+        free(labels[i].name);
+    safe_free(labels, number_of_labels * sizeof(Label));
     return byteCodeStruct;
 }
 
@@ -142,73 +156,46 @@ void WriteByteCode(char *fileName, ByteCodeStruct byteCodeStruct)
 }
 
 
-void TakeCommand(char *pointerToComm, unsigned char *byteCode, size_t *indexByteCode, size_t *labels)
+
+
+void ParserCmdFromStr(char *pointerToCmd, unsigned char *byteCode, size_t *indexByteCode, Label *labels)
 {
     char inputCommand[CommandMaxLen + 1] = "";
-    char inputArg[ArgumentMaxLen] = "";
-    DivideToPiece(pointerToComm, inputCommand, inputArg);
+    char inputArg[ArgumentMaxLen + 1] = "";
+    inputCommand[CommandMaxLen] = '\0';
+    inputArg[ArgumentMaxLen] = '\0';
+
+    DivideStrToPiece(pointerToCmd, inputCommand, inputArg);
+
+    // printf("Command name = %s\n", inputCommand);
+    // printf("arg name = %s\n\n", inputArg);
+    CmdToWriteInfo cmdInfoValue = 
+    {
+        .byteCode      = byteCode,
+        .indexByteCode = indexByteCode,
+        .labels        = labels,
+        .inputCommand  = inputCommand,
+        .inputArg      = inputArg,
+    };
+    CmdToWriteInfo *cmdInfo = &cmdInfoValue;
+          
     if(inputCommand[0] == ':')
     {
-        int arg = 0;
-        char *inputCommand1 = inputCommand + 1;
-        sscanf(inputCommand1, "%i", &arg);
-        if(!(0 < arg || arg <= number_of_labels))
-        {
-            printf("Entered %i, but it cant be a label(less than 0 or more than max(number_of_labels))\n", arg);
-            return;
-        }
-        labels[arg] = *indexByteCode;
+        FillLabel(cmdInfo);
         return;
     }
     for(size_t i = 0; i < number_of_commands_ - 1; i++)
         if(strcmp(inputCommand, commands_[i].name) == 0)//TODO: add strcmp for int
         {
-            COMMAND_INDEX index = commands_[i].index;
-            if(index == pusr_index || index == popr_index)
-            {
-                if(inputArg[1] == 'X')
-                {
-                    if('A' <= inputArg[0] && inputArg[0] <= 'D')
-                    {
-                        byteCode[(*indexByteCode)++] = (unsigned char)index;
-
-                        unsigned char registerIndex = (unsigned char) (inputArg[0] - 'A' + 1);
-                        byteCode[(*indexByteCode)++] = registerIndex;
-                        return;
-                    }
-                }
-                byteCode[(*indexByteCode)++] = (unsigned char)notcomm_index;
-                return;
-            }
-
-            else if (commands_[i].args == 1)
-            {
-                if(inputArg[0] == ':')
-                {
-                    int arg = 0;
-                    char *inputArg1 = inputArg + 1;
-                    sscanf(inputArg1, "%i", &arg);
-                    if(!(0 < arg || arg <= number_of_labels))
-                    {
-                        printf("Entered %i, but it cant be a label(less than 0 or more than max(number_of_labels))\n", arg);
-                        return;
-                    }
-                    byteCode[(*indexByteCode)++] = (unsigned char)index;
-                    WriteArgToByteCode(byteCode, indexByteCode, (void *)&labels[arg], sizeof(size_t));
-                    return;
-                }
-                byteCode[(*indexByteCode)++] = (unsigned char)index;
-
-                StackElem_t arg = 0;
-                sscanf(inputArg, "%" PRINTF_T, &arg);
-                WriteArgToByteCode(byteCode, indexByteCode, &arg, sizeof(StackElem_t));
-                return;
-            }
-            byteCode[(*indexByteCode)++] = (unsigned char)index;
+            cmdInfo->indexInCmdArr = i;
+            WriteCmdToBytecode(cmdInfo);
             return;
         }
-    byteCode[(*indexByteCode)++] = (unsigned char)notcomm_index;
+    byteCode[(*indexByteCode)++] = (unsigned char)notcmd_index;
 }
+
+
+
 
 void WriteArgToByteCode(unsigned char *byteCode, size_t *indexByteCode, void *arg, size_t size)
 {
@@ -216,26 +203,99 @@ void WriteArgToByteCode(unsigned char *byteCode, size_t *indexByteCode, void *ar
         byteCode[(*indexByteCode)++] = (unsigned char)*((unsigned char *)arg + i);
 }
 
-void DivideToPiece(char *pointerToComm, char *inputCommand, char *inputArg)
+void DivideStrToPiece(char *pointerToCmd, char *inputCommand, char *inputArg)
 {
-    int i = 0;
-    char tempc = pointerToComm[i];
-    while(tempc != ' ' && i < CommandMaxLen + 1)
+    sscanf(pointerToCmd, "%" MAKEVALUE(CommandMaxLen) "[^ \n] %" MAKEVALUE(ArgumentMaxLen) "[^ \n]", inputCommand, inputArg);
+}
+
+void FillLabel(CmdToWriteInfo *cmdInfo)
+{
+    char *inputCommand1 = cmdInfo->inputCommand + 1;
+    for(int i = 0; i < number_of_labels; i++)
     {
-        inputCommand[i] = tempc;
-        tempc = pointerToComm[++i];
+        if(cmdInfo->labels[i].name == NULL)
+        {
+            cmdInfo->labels[i].name = strdup(inputCommand1); 
+            cmdInfo->labels[i].pointer = *cmdInfo->indexByteCode;
+            return;
+        }
+
+        if(strcmp(cmdInfo->labels[i].name, inputCommand1) == 0)
+            return;
+
+        if(i == number_of_labels - 1 && cmdInfo->labels[i].name != NULL)
+        {
+            printf("Entered %s, but it cant be a label because its already maximum of labels\n", inputCommand1);
+            return;
+        }
+    }
+}
+
+void WriteCmdToBytecode(CmdToWriteInfo *cmdInfo)
+{
+    COMMAND_INDEX index = commands_[cmdInfo->indexInCmdArr].index;
+    if(index == pusr_index || index == popr_index)
+    {
+        WriteRegCmd(cmdInfo);
+        return;
     }
 
-    inputCommand[i++] = '\0';
-    int j = 0;
-    tempc = pointerToComm[i];
-    while(tempc != '\0')
+    else if (commands_[cmdInfo->indexInCmdArr].args == 1)
     {
-        inputArg[j] = tempc;
-        tempc = pointerToComm[++i];
-        j++;
+        WriteOneArgCmd(cmdInfo);
+        return;
     }
-    inputArg[j] = '\0';
+    cmdInfo->byteCode[(*cmdInfo->indexByteCode)++] = (unsigned char)index;
+}
+
+void WriteRegCmd(CmdToWriteInfo *cmdInfo)
+{
+    COMMAND_INDEX index = commands_[cmdInfo->indexInCmdArr].index;
+    if(cmdInfo->inputArg[1] == 'X')
+    {
+        if('A' <= cmdInfo->inputArg[0] && cmdInfo->inputArg[0] <= 'D')
+        {
+            cmdInfo->byteCode[(*cmdInfo->indexByteCode)++] = (unsigned char)index;
+
+            unsigned char registerIndex = (unsigned char) (cmdInfo->inputArg[0] - 'A' + 1);
+            cmdInfo->byteCode[(*cmdInfo->indexByteCode)++] = registerIndex;
+            return;
+        }
+    }
+    cmdInfo->byteCode[(*cmdInfo->indexByteCode)++] = (unsigned char)notcmd_index;
+}
+
+void WriteOneArgCmd(CmdToWriteInfo *cmdInfo)
+{
+    COMMAND_INDEX index = commands_[cmdInfo->indexInCmdArr].index;
+    if(cmdInfo->inputArg[0] == ':')
+    {
+        char *inputArg1 = cmdInfo->inputArg + 1;
+        for(int i = 0; i < number_of_labels; i++)
+        {
+            if(cmdInfo->labels[i].name != NULL && strcmp(cmdInfo->labels[i].name, inputArg1) == 0)
+            {
+                size_t arg = cmdInfo->labels[i].pointer;
+                cmdInfo->byteCode[(*cmdInfo->indexByteCode)++] = (unsigned char)index;
+                WriteArgToByteCode(cmdInfo->byteCode, cmdInfo->indexByteCode, (void *)&arg, sizeof(size_t));
+                return;
+            }
+        }
+        size_t arg = 0;
+        cmdInfo->byteCode[(*cmdInfo->indexByteCode)++] = (unsigned char)index;
+        WriteArgToByteCode(cmdInfo->byteCode, cmdInfo->indexByteCode, (void *)&arg, sizeof(size_t));
+        return;
+    }
+    StackElem_t arg = 0;
+    if(sscanf(cmdInfo->inputArg, "%" PRINTF_T, &arg) != 1)
+    {
+        printf("Invalid numeric argument: <%s>\n", cmdInfo->inputArg);
+        cmdInfo->byteCode[(*cmdInfo->indexByteCode)++] = (unsigned char)notcmd_index;
+        WriteArgToByteCode(cmdInfo->byteCode, cmdInfo->indexByteCode, &arg, sizeof(StackElem_t));
+        return;
+    }
+    cmdInfo->byteCode[(*cmdInfo->indexByteCode)++] = (unsigned char)index;
+    WriteArgToByteCode(cmdInfo->byteCode, cmdInfo->indexByteCode, &arg, sizeof(StackElem_t));
 }
 
 // int StrCmpInt(char *firstString, char *SecondString)//TODO: Finish it

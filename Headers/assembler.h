@@ -5,24 +5,50 @@
 #include "./global.h"
 #include "../Stack_lib/Headers/stack.h"
 
+
 typedef struct
 {
-    unsigned char *byteCode;//TODO const unsigned char*
+    unsigned char *byteCode;
     size_t nCommands;
     size_t size;
 }ByteCodeStruct;
 
-extern const int number_of_labels;
+typedef struct
+{
+    char *name;
+    size_t pointer;
+}Label;
 
-ByteCodeStruct ReadFile(char *fileName);
+typedef struct
+{
+    unsigned char *byteCode;
+    size_t *indexByteCode;
+    size_t indexInCmdArr;
+    Label *labels;
+    char *inputCommand;
+    char *inputArg;
+}CmdToWriteInfo;
+
+
+const int number_of_labels = 100;
+
+ByteCodeStruct ProcReadFile(char *fileName);
 size_t ReplaceRNto0(char *stringText, size_t fileSize);
 void SetPointerArr(char *stringText, size_t fileSize, char **pointerArr);
+ByteCodeStruct ParsTextToBytecode(size_t nlines, char **pointerArr);
 
-void TakeCommand(char *pointerToComm, unsigned char *byteCode, size_t *indexByteCode, size_t *labels);
-void DivideToPiece(char *pointerToComm, char *inputCommand, char *inputArg);
+
+void ParserCmdFromStr(char *pointerToCmd, unsigned char *byteCode, size_t *indexByteCode, Label *labels);
+void DivideStrToPiece(char *pointerToCmd, char *inputCommand, char *inputArg);
 void WriteArgToByteCode(unsigned char *byteCode, size_t *indexByteCode, void *arg, size_t size);
+
+void FillLabel(CmdToWriteInfo *cmdInfo);
+void WriteCmdToBytecode(CmdToWriteInfo *cmdInfo);
+void WriteRegCmd(CmdToWriteInfo *cmdInfo);
+void WriteOneArgCmd(CmdToWriteInfo *cmdInfo);
+
 
 void WriteByteCode(char *fileName, ByteCodeStruct byteCodeStruct);
 
-#endif 
+#endif
 //end #ifndef ASSEMBLER_H

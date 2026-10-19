@@ -8,16 +8,13 @@
 #include "../Stack_lib/Headers/dump.h"
 #include "./assembler.h"
 
-const int CommandMaxLen = 4; 
-const int ArgumentMaxLen = 32; 
-
 enum ERRORS_PROCESSOR
 {
-     //TODO: add error assembler
     procCantAdd,
     procCantSub,
     procCantDiv,
     procCantMul,
+    procCantSqrt,
     procCantJmp,
     procCantIn,
     procNoErr
@@ -51,13 +48,14 @@ enum COMMAND_INDEX
     call_index    = 18,
     ret_index     = 19,
 
-    notcomm_index = 20
+    notcmd_index = 20
 };
 
 typedef struct 
 {
     ByteCodeStruct byteCodeStruct;
     StackElem_t *registers;
+    StackElem_t *RAM;
     Stack_t *stk;
     Stack_t *stkRet;
     size_t ip;//instruction pointer
@@ -69,16 +67,25 @@ typedef struct
     COMMAND_INDEX index;
     const char *name;
     int args;
-    enum ERRORS_PROCESSOR (*function)(ProcessorStruct *);
+    ERRORS_PROCESSOR (*function)(ProcessorStruct *);
 }Command;
 
 
 void RunProcessor(ByteCodeStruct byteCodeStruct);
+
+
 ProcessorStruct *ProcessorStructInit(ByteCodeStruct byteCodeStruct);
 void ProcessorRegistersInit(ProcessorStruct *proc);
+void ProcessorRAMInit(ProcessorStruct *proc);
+
 void PrintProcessor(ProcessorStruct *proc);
+void PrintBytecode(ProcessorStruct *proc);
+void PrintRegisters(ProcessorStruct *proc);
+void PrintReturns(ProcessorStruct *proc);
+void PrintRAM(ProcessorStruct *proc);
 
 void *MakeElemFromByteCode(ProcessorStruct *proc, size_t size);
+
 
 enum ERRORS_PROCESSOR ProcessorHlt(ProcessorStruct *proc);
 
@@ -108,11 +115,10 @@ enum ERRORS_PROCESSOR ProcessorRet(ProcessorStruct *proc);
 
 enum ERRORS_PROCESSOR ProcessorNotComm(ProcessorStruct *proc);
 
-
 const Command commands_[] = 
 {
     {.index = hlt_index,     .name = "HLT",  .args = 0, .function = *ProcessorHlt},
-
+    
     {.index = push_index,    .name = "PUSH", .args = 1, .function = *ProcessorPush},
     {.index = out_index,     .name = "OUT",  .args = 0, .function = *ProcessorOut},
 
@@ -137,10 +143,14 @@ const Command commands_[] =
     {.index = call_index,    .name = "CALL", .args = 1, .function = *ProcessorCall},
     {.index = ret_index,     .name = "RET",  .args = 0, .function = *ProcessorRet},
 
-    {.index = notcomm_index, .name = "NOTC",  .args = 0, .function = *ProcessorNotComm},
+    {.index = notcmd_index, .name = "NOTC",  .args = 0, .function = *ProcessorNotComm},
 };
 const size_t number_of_commands_ = sizeof(commands_) / sizeof(commands_[0]);
 
-const int number_of_registers = 10;
-const size_t number_of_elem_on_line = 20;
+const size_t number_of_registers = 10;
+const size_t number_of_RAM = 200;
+
+const size_t number_of_elem_on_line = 16;//How much elem of bytecode show PrintProcessor
+
+
 #endif
