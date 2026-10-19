@@ -8,9 +8,11 @@ void RunProcessor(ByteCodeStruct byteCodeStruct)
     while(proc->ip < byteCodeStruct.size)
     {
         COMMAND_INDEX index = (COMMAND_INDEX)proc->byteCodeStruct.byteCode[proc->ip];
-        printf(CYAN "%s\n\n" RESET, commands_[index].name);
+        View indexP;
+        indexP.value = index;
+        printf(CYAN "%s\n\n" RESET, commands_[indexP.bits.b0].name);
         PrintProcessor(proc);
-        commands_[index].function(proc);
+        commands_[indexP.bits.b0].function(proc);
     }
 }
 
@@ -51,7 +53,7 @@ void PrintBytecode(ProcessorStruct *proc)
             printf("\n");
         }
 
-        else if ((i + 1) < size - 1)
+        else if (i < size - 1)
             printf(", ");
     }
 }
@@ -146,9 +148,27 @@ enum ERRORS_PROCESSOR ProcessorNotComm(ProcessorStruct *proc)
 
 enum ERRORS_PROCESSOR ProcessorPush(ProcessorStruct *proc)
 {
-    proc->ip++;
-    StackElem_t elemToPush = *(StackElem_t *)MakeElemFromByteCode(proc, sizeof(StackElem_t));
-    StackPush(proc->stk, elemToPush);
+    View indexP;
+    indexP.value = proc->byteCodeStruct.byteCode[proc->ip++];
+    StackElem_t res = 0;
+
+    if(indexP.bits.b2)
+    {
+        res += proc->registers[proc->byteCodeStruct.byteCode[proc->ip++]];
+    }
+
+    if(indexP.bits.b1)
+    {
+        StackElem_t elemToPush = *(StackElem_t *)MakeElemFromByteCode(proc, sizeof(StackElem_t));
+        res += elemToPush;
+    }
+
+    if(indexP.bits.b3)
+    {
+        res = proc->RAM[(size_t)res];
+    }
+
+    StackPush(proc->stk, res);
     return procNoErr;
 }
 
@@ -169,18 +189,6 @@ enum ERRORS_PROCESSOR ProcessorOut(ProcessorStruct *proc)
     printf(MAGENTA "Outed from stack <%" PRINTF_T ">\n" RESET, elemThatPoped);
     return procNoErr;
 }
-
-
-enum ERRORS_PROCESSOR ProcessorPusr(ProcessorStruct *proc)
-{
-    proc->ip++;
-    int indexInRegisterArr = 0;
-    *((unsigned char *)&indexInRegisterArr) = proc->byteCodeStruct.byteCode[proc->ip++];
-    StackElem_t elemToPush = proc->registers[indexInRegisterArr];
-    StackPush(proc->stk, elemToPush);
-    return procNoErr;
-}
-
 
 enum ERRORS_PROCESSOR ProcessorPopr(ProcessorStruct *proc)
 {

@@ -29,8 +29,8 @@ ByteCodeStruct ProcReadFile(char *fileName)
     
     char **pointerArr = (char **)safe_calloc((size_t)nlines, sizeof(char *));;
     SetPointerArr(stringText, fileSize, pointerArr);
-    ByteCodeStruct byteCodeStruct = ParsTextToBytecode(nlines, pointerArr);
     fclose(pFile);
+    ByteCodeStruct byteCodeStruct = ParsTextToBytecode(nlines, pointerArr);
     return byteCodeStruct;
 }
 
@@ -205,7 +205,7 @@ void WriteArgToByteCode(unsigned char *byteCode, size_t *indexByteCode, void *ar
 
 void DivideStrToPiece(char *pointerToCmd, char *inputCommand, char *inputArg)
 {
-    sscanf(pointerToCmd, "%" MAKEVALUE(CommandMaxLen) "[^ \n] %" MAKEVALUE(ArgumentMaxLen) "[^ \n]", inputCommand, inputArg);
+    sscanf(pointerToCmd, "%" MAKEVALUE(CommandMaxLen) "[^[ \n] %" MAKEVALUE(ArgumentMaxLen) "[^\n]", inputCommand, inputArg);
 }
 
 void FillLabel(CmdToWriteInfo *cmdInfo)
@@ -234,13 +234,7 @@ void FillLabel(CmdToWriteInfo *cmdInfo)
 void WriteCmdToBytecode(CmdToWriteInfo *cmdInfo)
 {
     COMMAND_INDEX index = commands_[cmdInfo->indexInCmdArr].index;
-    if(index == pusr_index || index == popr_index)
-    {
-        WriteRegCmd(cmdInfo);
-        return;
-    }
-
-    else if (commands_[cmdInfo->indexInCmdArr].args == 1)
+    if (commands_[cmdInfo->indexInCmdArr].args == 1)
     {
         WriteOneArgCmd(cmdInfo);
         return;
@@ -248,54 +242,130 @@ void WriteCmdToBytecode(CmdToWriteInfo *cmdInfo)
     cmdInfo->byteCode[(*cmdInfo->indexByteCode)++] = (unsigned char)index;
 }
 
-void WriteRegCmd(CmdToWriteInfo *cmdInfo)
-{
-    COMMAND_INDEX index = commands_[cmdInfo->indexInCmdArr].index;
-    if(cmdInfo->inputArg[1] == 'X')
-    {
-        if('A' <= cmdInfo->inputArg[0] && cmdInfo->inputArg[0] <= 'D')
-        {
-            cmdInfo->byteCode[(*cmdInfo->indexByteCode)++] = (unsigned char)index;
-
-            unsigned char registerIndex = (unsigned char) (cmdInfo->inputArg[0] - 'A' + 1);
-            cmdInfo->byteCode[(*cmdInfo->indexByteCode)++] = registerIndex;
-            return;
-        }
-    }
-    cmdInfo->byteCode[(*cmdInfo->indexByteCode)++] = (unsigned char)notcmd_index;
-}
-
 void WriteOneArgCmd(CmdToWriteInfo *cmdInfo)
 {
-    COMMAND_INDEX index = commands_[cmdInfo->indexInCmdArr].index;
+    COMMAND_INDEX index = notcmd_index;
     if(cmdInfo->inputArg[0] == ':')
     {
         char *inputArg1 = cmdInfo->inputArg + 1;
+        size_t arg = 0;
         for(int i = 0; i < number_of_labels; i++)
         {
             if(cmdInfo->labels[i].name != NULL && strcmp(cmdInfo->labels[i].name, inputArg1) == 0)
             {
-                size_t arg = cmdInfo->labels[i].pointer;
-                cmdInfo->byteCode[(*cmdInfo->indexByteCode)++] = (unsigned char)index;
-                WriteArgToByteCode(cmdInfo->byteCode, cmdInfo->indexByteCode, (void *)&arg, sizeof(size_t));
-                return;
+                index = commands_[cmdInfo->indexInCmdArr].index;
+                arg = cmdInfo->labels[i].pointer;
+                break;
             }
         }
-        size_t arg = 0;
         cmdInfo->byteCode[(*cmdInfo->indexByteCode)++] = (unsigned char)index;
         WriteArgToByteCode(cmdInfo->byteCode, cmdInfo->indexByteCode, (void *)&arg, sizeof(size_t));
         return;
     }
-    StackElem_t arg = 0;
-    if(sscanf(cmdInfo->inputArg, "%" PRINTF_T, &arg) != 1)
+
+    index = commands_[cmdInfo->indexInCmdArr].index;
+    if(index == popr_index)
     {
-        printf("Invalid numeric argument: <%s>\n", cmdInfo->inputArg);
+        if(cmdInfo->inputArg[1] == 'X')
+        {
+            if('A' <= cmdInfo->inputArg[0] && cmdInfo->inputArg[0] <= 'D')
+            {
+                cmdInfo->byteCode[(*cmdInfo->indexByteCode)++] = (unsigned char)index;
+
+                unsigned char registerIndex = (unsigned char) (cmdInfo->inputArg[0] - 'A');
+                cmdInfo->byteCode[(*cmdInfo->indexByteCode)++] = registerIndex;
+                return;
+            }
+        }
         cmdInfo->byteCode[(*cmdInfo->indexByteCode)++] = (unsigned char)notcmd_index;
-        WriteArgToByteCode(cmdInfo->byteCode, cmdInfo->indexByteCode, &arg, sizeof(StackElem_t));
-        return;
     }
+
+    if(IsIndexPush(index))
+    {   
+        char *input = cmdInfo->inputArg;
+        View indexP;
+        indexP.value = index;
+        if(cmdInfo->inputArg[0] == '[')
+        {
+            indexP.bits.b3 = 1;   
+            input += 1;
+        }
+            
+        char *firstStr = (char *)safe_calloc(ArgumentMaxLen, sizeof(char));
+        char *secondStr = (char *)safe_calloc(ArgumentMaxLen, sizeof(char));
+
+        int inputN = sscanf(input, "%[^] +]%*[^0-9]%[^] \n]", firstStr, secondStr);
+        if(inputN == 2)
+        {
+            indexP.bits.b1 = 1;
+            indexP.bits.b2 = 1;
+            cmdInfo->byteCode[(*cmdInfo->indexByteCode)++] = (unsigned char)indexP.value;
+            if(firstStr[1] == 'X')
+            {
+                if('A' <= firstStr[0] && firstStr[0] <= 'D')
+                {
+                    unsigned char registerIndex = (unsigned char) (firstStr[0] - 'A');
+                    cmdInfo->byteCode[(*cmdInfo->indexByteCode)++] = registerIndex;
+                }
+                // else
+                //     TOFILE ERROR
+                //TODO: FILE LOGS
+            }
+            // else
+            //     TOFILE ERROR
+            //TODO: FILE LOGS
+
+            StackElem_t konst = 0;
+            sscanf(secondStr, "%" PRINTF_T, &konst);//TODO: handle inputN
+            WriteArgToByteCode(cmdInfo->byteCode, cmdInfo->indexByteCode, &konst, sizeof(StackElem_t));
+            return;
+        }
+        else if(inputN == 1)
+        {
+            if(firstStr[1] == 'X')
+            {
+                indexP.bits.b2 = 1;
+                cmdInfo->byteCode[(*cmdInfo->indexByteCode)++] = (unsigned char)indexP.value;
+                if('A' <= firstStr[0] && firstStr[0] <= 'D')
+                {
+                    unsigned char registerIndex = (unsigned char) (firstStr[0] - 'A');
+                    cmdInfo->byteCode[(*cmdInfo->indexByteCode)++] = registerIndex;
+                }
+                // else
+                //     TOFILE ERROR
+                //TODO: FILE LOGS
+            }
+            else
+            {
+                indexP.bits.b1 = 1;
+                cmdInfo->byteCode[(*cmdInfo->indexByteCode)++] = (unsigned char)indexP.value;
+                StackElem_t konst = 0;
+                sscanf(firstStr, "%" PRINTF_T, &konst);//TODO: handle inputN
+                WriteArgToByteCode(cmdInfo->byteCode, cmdInfo->indexByteCode, &konst, sizeof(StackElem_t));
+            }
+            return;
+        }
+        // else
+        //     TOFILE ERROR
+        //TODO: FILE LOGS
+    }
+
+    index = notcmd_index;
+    StackElem_t arg = 0;
+    if(sscanf(cmdInfo->inputArg, "%" PRINTF_T, &arg) == 1)
+        index = commands_[cmdInfo->indexInCmdArr].index;
+        
     cmdInfo->byteCode[(*cmdInfo->indexByteCode)++] = (unsigned char)index;
     WriteArgToByteCode(cmdInfo->byteCode, cmdInfo->indexByteCode, &arg, sizeof(StackElem_t));
+}
+
+bool IsIndexPush(unsigned char index)
+{
+    View indexP;
+    indexP.value = index;
+    if(indexP.bits.b0 == push_index)
+        return true;
+    return false;
 }
 
 // int StrCmpInt(char *firstString, char *SecondString)//TODO: Finish it

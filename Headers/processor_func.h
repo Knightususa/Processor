@@ -27,28 +27,27 @@ enum COMMAND_INDEX
     push_index    = 1,
     out_index     = 2,
    
-    pusr_index    = 3,
-    popr_index    = 4,
-   
-    add_index     = 5,
-    sub_index     = 6,
-    div_index     = 7,
-    mul_index     = 8,
-    sqrt_index    = 9,
-   
-    jmp_index     = 10,
-    je_index      = 11,
-    jne_index     = 12,
-    ja_index      = 13,
-    jae_index     = 14,
-    jb_index      = 15,
-    jbe_index     = 16,
+    popr_index    = 3,
 
-    in_index      = 17,
-    call_index    = 18,
-    ret_index     = 19,
+    add_index     = 4,
+    sub_index     = 5,
+    div_index     = 6,
+    mul_index     = 7,
+    sqrt_index    = 8,
+   
+    jmp_index     = 9,
+    je_index      = 10,
+    jne_index     = 11,
+    ja_index      = 12,
+    jae_index     = 13,
+    jb_index      = 14,
+    jbe_index     = 15,
 
-    notcmd_index = 20
+    in_index      = 16,
+    call_index    = 17,
+    ret_index     = 18,
+
+    notcmd_index = 19
 };
 
 typedef struct 
@@ -69,6 +68,7 @@ typedef struct
     int args;
     ERRORS_PROCESSOR (*function)(ProcessorStruct *);
 }Command;
+
 
 
 void RunProcessor(ByteCodeStruct byteCodeStruct);
@@ -92,7 +92,6 @@ enum ERRORS_PROCESSOR ProcessorHlt(ProcessorStruct *proc);
 enum ERRORS_PROCESSOR ProcessorPush(ProcessorStruct *proc);
 enum ERRORS_PROCESSOR ProcessorOut(ProcessorStruct *proc);
 
-enum ERRORS_PROCESSOR ProcessorPusr(ProcessorStruct *proc);
 enum ERRORS_PROCESSOR ProcessorPopr(ProcessorStruct *proc);
 
 enum ERRORS_PROCESSOR ProcessorAdd(ProcessorStruct *proc);
@@ -122,7 +121,6 @@ const Command commands_[] =
     {.index = push_index,    .name = "PUSH", .args = 1, .function = *ProcessorPush},
     {.index = out_index,     .name = "OUT",  .args = 0, .function = *ProcessorOut},
 
-    {.index = pusr_index,    .name = "PUSR", .args = 1, .function = *ProcessorPusr},
     {.index = popr_index,    .name = "POPR", .args = 1, .function = *ProcessorPopr},
 
     {.index = add_index,     .name = "ADD",  .args = 0, .function = *ProcessorAdd},

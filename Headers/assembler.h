@@ -30,6 +30,22 @@ typedef struct
 }CmdToWriteInfo;
 
 
+
+typedef struct
+{
+    unsigned int b0 :5;
+    unsigned int b1 :1;
+    unsigned int b2 :1;
+    unsigned int b3 :1;
+}ByteField;
+
+typedef union
+{
+    unsigned char value;
+    ByteField      bits;
+}View;
+
+
 const int number_of_labels = 100;
 
 ByteCodeStruct ProcReadFile(char *fileName);
@@ -44,9 +60,8 @@ void WriteArgToByteCode(unsigned char *byteCode, size_t *indexByteCode, void *ar
 
 void FillLabel(CmdToWriteInfo *cmdInfo);
 void WriteCmdToBytecode(CmdToWriteInfo *cmdInfo);
-void WriteRegCmd(CmdToWriteInfo *cmdInfo);
 void WriteOneArgCmd(CmdToWriteInfo *cmdInfo);
-
+bool IsIndexPush(unsigned char index);
 
 void WriteByteCode(char *fileName, ByteCodeStruct byteCodeStruct);
 
