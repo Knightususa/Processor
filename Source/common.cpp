@@ -27,6 +27,7 @@ void safe_free(void *pointer, size_t size)
 {
     warning (pointer != NULL, "Pointer to data to free is NULL");
     yaissert(pointer != NULL);
+    
     if(pointer != NULL)
         memset(pointer, 0, size);
     free(pointer);

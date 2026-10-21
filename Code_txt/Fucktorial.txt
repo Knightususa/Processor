@@ -1,28 +1,26 @@
-IN
-POP AX
-PUSH 1
-POP BX
-CALL :facktorial
-OUT
-HLT
+in
+pop ax
+push 1
+pop bx
+call :facktorial
+out
+hlt
 
 :facktorial
-PUSH AX
-PUSH 1
-JBE :base
+    push ax
+    push 1
+    jbe :base
+        push ax
+        push bx
+        mul
+        pop bx
+        push ax
+        push 1
+        sub
+        pop ax
+        call :facktorial
+        ret
 
-PUSH AX
-PUSH BX
-MUL
-POP BX
-
-PUSH AX
-PUSH 1
-SUB
-POP AX
-CALL :facktorial
-RET
-
-:base
-PUSH BX
-RET
+    :base
+        push bx
+        ret

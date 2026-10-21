@@ -1,16 +1,16 @@
-PUSH 1
-PUSH 0
-POPR AX
+push 1
+push 0
+popr ax
 :1
-PUSH 1
-PUSR AX
-ADD
-POPR AX
-PUSR AX
-PUSR AX
-MUL
-OUT
-PUSR AX
-PUSH 10
-JB :1
-HLT
+push 1
+pusr ax
+add
+popr ax
+pusr ax
+pusr ax
+mul
+out
+pusr ax
+push 10
+jb :1
+hlt

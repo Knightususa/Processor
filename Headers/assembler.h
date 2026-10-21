@@ -8,13 +8,6 @@
 
 typedef struct
 {
-    unsigned char *byteCode;
-    size_t nCommands;
-    size_t size;
-}ByteCodeStruct;
-
-typedef struct
-{
     char *name;
     size_t pointer;
 }Label;
@@ -29,24 +22,17 @@ typedef struct
     char *inputArg;
 }CmdToWriteInfo;
 
-
-
 typedef struct
 {
-    unsigned int b0 :5;
-    unsigned int b1 :1;
-    unsigned int b2 :1;
-    unsigned int b3 :1;
-}ByteField;
-
-typedef union
-{
-    unsigned char value;
-    ByteField      bits;
-}View;
-
+    char *filename;
+}OptionsAsm;
 
 const int number_of_labels = 100;
+
+void GetOptionsAsm(int argc, char **argv, OptionsAsm *pOptions);
+
+void DelNameExt(OptionsAsm *pOptions);
+char *CreateName(char *filename, const char *ext);
 
 ByteCodeStruct ProcReadFile(char *fileName);
 size_t ReplaceRNto0(char *stringText, size_t fileSize);

@@ -1,7 +1,6 @@
 #include "../Headers/common.h"
 #include "../Headers/assembler.h"
 #include "../Stack_lib/Headers/stack.h"
-#include "../Headers/processor_func.h"
 
 #include <string.h>
 #include <sys/types.h>
@@ -9,8 +8,78 @@
 #include <unistd.h>
 
 
+main(int argc, char **argv)
+{
+    OptionsAsm Options;
+    Options.filename = NULL;
+    GetOptionsAsm(argc, argv, &Options);   
+    DelNameExt(&Options);
+    char *filenametxt = CreateName(Options.filename, "txt");
+    char *filenamebin = CreateName(Options.filename, "bin");
+
+    ByteCodeStruct byteCodeStruct = ProcReadFile(filenametxt);
+    WriteByteCode(filenamebin, byteCodeStruct);
+}
+
+void GetOptionsAsm(int argc, char **argv, OptionsAsm *pOptions)
+{
+    yaissert(argv != NULL);
+
+    int opt = 0;
+    while ((opt = getopt(argc, argv, "i:")) != -1)
+    {
+        switch (opt)
+        {       
+            case 'i':
+                pOptions -> filename = optarg;
+                break;
+            
+            default:
+                warning(0, "Wrong flag");
+                break;
+        }
+    }
+    if(pOptions->filename == NULL)
+        printf(RED "Enter flag -i and filename\n" RESET);
+}
+
+void DelNameExt(OptionsAsm *pOptions)
+{   
+    yaissert(pOptions != NULL);
+    yaissert(pOptions->filename != NULL);
+
+    char *f = pOptions->filename;
+    int lenf = (int)strlen(f);
+    int i = lenf - 1;
+
+    while(i >= 0 && f[i] != '.')
+        i--;
+
+    if(i <= 0)
+        return;
+
+    for(int j = 0; i + j < lenf; j++)
+        (pOptions->filename)[i + j] = '\0';
+}
+
+char *CreateName(char *filename, const char *ext)
+{
+    yaissert(filename != NULL);
+
+    char *nameOut = (char *)safe_calloc(strlen(filename) + strlen("./Code_/.") + 2 * strlen(ext), sizeof(char));
+    strcpy(nameOut, "./Code_");
+    strcat(nameOut, ext);
+    strcat(nameOut, "/");
+    strcat(nameOut, filename);
+    strcat(nameOut, ".");
+    strcat(nameOut, ext);
+    return nameOut;
+}
+
 ByteCodeStruct ProcReadFile(char *fileName)
 {
+    yaissert(fileName != NULL);
+
     char mode[] = "rb";
     FILE *pFile = safe_fopen(fileName, mode);
 
@@ -36,8 +105,9 @@ ByteCodeStruct ProcReadFile(char *fileName)
 
 ByteCodeStruct ParsTextToBytecode(size_t nlines, char **pointerArr)
 {
+    yaissert(pointerArr != NULL);
+
     ByteCodeStruct byteCodeStruct;
-    byteCodeStruct.nCommands = nlines;
     byteCodeStruct.size = (sizeof(StackElem_t) + CommandMaxLen) * nlines;
     byteCodeStruct.byteCode = (unsigned char*) safe_calloc(byteCodeStruct.size, sizeof(unsigned char));
     
@@ -73,6 +143,9 @@ ByteCodeStruct ParsTextToBytecode(size_t nlines, char **pointerArr)
 
 size_t ReplaceRNto0(char *stringText, size_t fileSize)
 {
+    yaissert(stringText != NULL);
+    yaissert(fileSize != 0);
+
     size_t i = 0;
     size_t nlines = 0;
 
@@ -147,7 +220,9 @@ void SetPointerArr(char *stringText, size_t fileSize, char **pointerArr)
 
 void WriteByteCode(char *fileName, ByteCodeStruct byteCodeStruct)
 {
-    char mode[] = "wb";
+    yaissert(fileName != NULL);
+
+    char mode[] = "wb";//TODO: need to know what the dif w and wb
     FILE *pFile = safe_fopen(fileName, mode);
 
     write(fileno(pFile), byteCodeStruct.byteCode, (unsigned int)byteCodeStruct.size);
@@ -158,17 +233,22 @@ void WriteByteCode(char *fileName, ByteCodeStruct byteCodeStruct)
 
 
 
-void ParserCmdFromStr(char *pointerToCmd, unsigned char *byteCode, size_t *indexByteCode, Label *labels)
+void ParserCmdFromStr(char *pointerToStrWithCmd, unsigned char *byteCode, size_t *indexByteCode, Label *labels)
 {
+    yaissert(pointerToStrWithCmd != NULL);
+    yaissert(byteCode != NULL);
+    yaissert(indexByteCode != NULL);
+    yaissert(labels != NULL);
+
     char inputCommand[CommandMaxLen + 1] = "";
     char inputArg[ArgumentMaxLen + 1] = "";
     inputCommand[CommandMaxLen] = '\0';
     inputArg[ArgumentMaxLen] = '\0';
 
-    DivideStrToPiece(pointerToCmd, inputCommand, inputArg);
+    DivideStrToPiece(pointerToStrWithCmd, inputCommand, inputArg);
+    if(inputCommand[0] == '/')
+        return;
 
-    // printf("Command name = %s\n", inputCommand);
-    // printf("arg name = %s\n\n", inputArg);
     CmdToWriteInfo cmdInfoValue = 
     {
         .byteCode      = byteCode,
@@ -185,7 +265,7 @@ void ParserCmdFromStr(char *pointerToCmd, unsigned char *byteCode, size_t *index
         return;
     }
     for(size_t i = 0; i < number_of_commands_ - 1; i++)
-        if(strcmp(inputCommand, commands_[i].name) == 0)//TODO: add strcmp for int
+        if(strcmp(inputCommand, commands_global_[i].name) == 0)//TODO: add strcmp for int
         {
             cmdInfo->indexInCmdArr = i;
             WriteCmdToBytecode(cmdInfo);
@@ -199,22 +279,33 @@ void ParserCmdFromStr(char *pointerToCmd, unsigned char *byteCode, size_t *index
 
 void WriteArgToByteCode(unsigned char *byteCode, size_t *indexByteCode, void *arg, size_t size)
 {
+    yaissert(byteCode != NULL);
+    yaissert(indexByteCode != NULL);
+    yaissert(arg != NULL);
+    yaissert(size != 0);
+
     for(size_t i = 0; i < size; i++)
         byteCode[(*indexByteCode)++] = (unsigned char)*((unsigned char *)arg + i);
 }
 
-void DivideStrToPiece(char *pointerToCmd, char *inputCommand, char *inputArg)
+void DivideStrToPiece(char *pointerToStrWithCmd, char *inputCommand, char *inputArg)
 {
-    // int i = 0;
-    // char tempc = pointerToCmd[i];
-    // while(tempc == ' ')
-    //     tempc = pointerToCmd[i++]; 
-    // i--;
-    sscanf(pointerToCmd, "%" MAKEVALUE(CommandMaxLen) "[^[ \n] %" MAKEVALUE(ArgumentMaxLen) "[^\n]", inputCommand, inputArg);
+    yaissert(pointerToStrWithCmd != NULL);
+    yaissert(inputCommand != NULL);
+    yaissert(inputArg != NULL);
+
+    sscanf(pointerToStrWithCmd, "%" MAKEVALUE(CommandMaxLen) "[^[ \n] %" MAKEVALUE(ArgumentMaxLen) "[^\n]", inputCommand, inputArg);
 }
 
 void FillLabel(CmdToWriteInfo *cmdInfo)
 {
+    yaissert(cmdInfo != NULL);
+    yaissert(cmdInfo->byteCode != NULL);
+    yaissert(cmdInfo->indexByteCode != NULL);
+    yaissert(cmdInfo->inputArg != NULL);
+    yaissert(cmdInfo->inputCommand != NULL);
+    yaissert(cmdInfo->labels != NULL);
+
     char *inputCommand1 = cmdInfo->inputCommand + 1;
     for(int i = 0; i < number_of_labels; i++)
     {
@@ -238,8 +329,15 @@ void FillLabel(CmdToWriteInfo *cmdInfo)
 
 void WriteCmdToBytecode(CmdToWriteInfo *cmdInfo)
 {
-    COMMAND_INDEX index = commands_[cmdInfo->indexInCmdArr].index;
-    if (commands_[cmdInfo->indexInCmdArr].args == 1)
+    yaissert(cmdInfo != NULL);
+    yaissert(cmdInfo->byteCode != NULL);
+    yaissert(cmdInfo->indexByteCode != NULL);
+    yaissert(cmdInfo->inputArg != NULL);
+    yaissert(cmdInfo->inputCommand != NULL);
+    yaissert(cmdInfo->labels != NULL);
+
+    COMMAND_INDEX index = commands_global_[cmdInfo->indexInCmdArr].index;
+    if (commands_global_[cmdInfo->indexInCmdArr].args == 1)
     {
         WriteOneArgCmd(cmdInfo);
         return;
@@ -249,6 +347,13 @@ void WriteCmdToBytecode(CmdToWriteInfo *cmdInfo)
 
 void WriteOneArgCmd(CmdToWriteInfo *cmdInfo)
 {
+    yaissert(cmdInfo != NULL);
+    yaissert(cmdInfo->byteCode != NULL);
+    yaissert(cmdInfo->indexByteCode != NULL);
+    yaissert(cmdInfo->inputArg != NULL);
+    yaissert(cmdInfo->inputCommand != NULL);
+    yaissert(cmdInfo->labels != NULL);
+
     COMMAND_INDEX index = notcmd_index;
     if(cmdInfo->inputArg[0] == ':')
     {
@@ -258,7 +363,7 @@ void WriteOneArgCmd(CmdToWriteInfo *cmdInfo)
         {
             if(cmdInfo->labels[i].name != NULL && strcmp(cmdInfo->labels[i].name, inputArg1) == 0)
             {
-                index = commands_[cmdInfo->indexInCmdArr].index;
+                index = commands_global_[cmdInfo->indexInCmdArr].index;
                 arg = cmdInfo->labels[i].pointer;
                 break;
             }
@@ -268,7 +373,7 @@ void WriteOneArgCmd(CmdToWriteInfo *cmdInfo)
         return;
     }
 
-    index = commands_[cmdInfo->indexInCmdArr].index;
+    index = commands_global_[cmdInfo->indexInCmdArr].index;
     if(IsIndexEqual(index, push_index))
     {
         WriteIfHaveFields(cmdInfo, push_index);
@@ -281,11 +386,10 @@ void WriteOneArgCmd(CmdToWriteInfo *cmdInfo)
         return;
     }
 
-
     index = notcmd_index;
     StackElem_t arg = 0;
     if(sscanf(cmdInfo->inputArg, "%" PRINTF_T, &arg) == 1)
-        index = commands_[cmdInfo->indexInCmdArr].index;
+        index = commands_global_[cmdInfo->indexInCmdArr].index;
         
     cmdInfo->byteCode[(*cmdInfo->indexByteCode)++] = (unsigned char)index;
     WriteArgToByteCode(cmdInfo->byteCode, cmdInfo->indexByteCode, &arg, sizeof(StackElem_t));
@@ -293,6 +397,13 @@ void WriteOneArgCmd(CmdToWriteInfo *cmdInfo)
 
 void WriteIfHaveFields(CmdToWriteInfo *cmdInfo, unsigned char index)
 {
+    yaissert(cmdInfo != NULL);
+    yaissert(cmdInfo->byteCode != NULL);
+    yaissert(cmdInfo->indexByteCode != NULL);
+    yaissert(cmdInfo->inputArg != NULL);
+    yaissert(cmdInfo->inputCommand != NULL);
+    yaissert(cmdInfo->labels != NULL);
+
     char *input = cmdInfo->inputArg;
     View indexP;
     indexP.value = index;
@@ -305,17 +416,17 @@ void WriteIfHaveFields(CmdToWriteInfo *cmdInfo, unsigned char index)
     char *firstStr = (char *)safe_calloc(ArgumentMaxLen, sizeof(char));
     char *secondStr = (char *)safe_calloc(ArgumentMaxLen, sizeof(char));
 
-    int inputN = sscanf(input, "%[^] +]%*[^0-9]%[^] \n]", firstStr, secondStr);
+    int inputN = sscanf(input, "%[^] +]%*[^-0-9]%[^] \n]", firstStr, secondStr);
     if(inputN == 2)
     {
         indexP.bits.b1 = 1;
         indexP.bits.b2 = 1;
         cmdInfo->byteCode[(*cmdInfo->indexByteCode)++] = (unsigned char)indexP.value;
-        if(firstStr[1] == 'X')
+        if(firstStr[1] == 'x')
         {
-            if('A' <= firstStr[0] && firstStr[0] <= 'D')
+            if('a' <= firstStr[0] && firstStr[0] <= 'd')
             {
-                unsigned char registerIndex = (unsigned char) (firstStr[0] - 'A');
+                unsigned char registerIndex = (unsigned char) (firstStr[0] - 'a');
                 cmdInfo->byteCode[(*cmdInfo->indexByteCode)++] = registerIndex;
             }
             // else
@@ -333,13 +444,13 @@ void WriteIfHaveFields(CmdToWriteInfo *cmdInfo, unsigned char index)
     }
     else if(inputN == 1)
     {
-        if(firstStr[1] == 'X')
+        if(firstStr[1] == 'x')
         {
             indexP.bits.b2 = 1;
             cmdInfo->byteCode[(*cmdInfo->indexByteCode)++] = (unsigned char)indexP.value;
-            if('A' <= firstStr[0] && firstStr[0] <= 'D')
+            if('a' <= firstStr[0] && firstStr[0] <= 'd')
             {
-                unsigned char registerIndex = (unsigned char) (firstStr[0] - 'A');
+                unsigned char registerIndex = (unsigned char) (firstStr[0] - 'a');
                 cmdInfo->byteCode[(*cmdInfo->indexByteCode)++] = registerIndex;
             }
             // else

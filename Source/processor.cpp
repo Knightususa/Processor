@@ -1,23 +1,121 @@
-#include "../Headers/processor_func.h"
+#include "../Headers/processor.h"
 
 // include-what-you-use -- linux
-
-void RunProcessor(ByteCodeStruct byteCodeStruct)
+main(int argc, char **argv)
 {
+    for(size_t i = 0; i < number_of_commands_; i++)
+        commands_processor[i].cmd = commands_global_[i];
+
+    OptionsProc Options;
+    Options.filename = NULL;
+    GetOptionsProc(argc, argv, &Options);   
+    DelNameExt(&Options);
+    char *filenamebin = CreateName(Options.filename, "bin");
+
+
+    ByteCodeStruct byteCodeStruct = ReadFileBytecode(filenamebin);
     ProcessorStruct *proc = ProcessorStructInit(byteCodeStruct);
     while(proc->ip < byteCodeStruct.size)
     {
         COMMAND_INDEX index = (COMMAND_INDEX)proc->byteCodeStruct.byteCode[proc->ip];
         View indexP;
         indexP.value = index;
-        printf(CYAN "%s\n\n" RESET, commands_[indexP.bits.b0].name);
+        // StackDump(proc->stk);
+        
+        ON_PROC_DEBUG
+        (
+        printf(CYAN "%s\n\n" RESET, commands_processor[indexP.bits.b0].cmd.name);
         PrintProcessor(proc);
-        commands_[indexP.bits.b0].function(proc);
+        )
+
+        commands_processor[indexP.bits.b0].function(proc);
     }
 }
 
+void GetOptionsProc(int argc, char **argv, OptionsProc *pOptions)
+{
+    yaissert(argv != NULL);
+
+    int opt = 0;
+    while ((opt = getopt(argc, argv, "i:")) != -1)
+    {
+        switch (opt)
+        {       
+            case 'i':
+                pOptions -> filename = optarg;
+                break;
+            
+            default:
+                warning(0, "Wrong flag");
+                break;
+        }
+    }
+    if(pOptions->filename == NULL)
+        printf(RED "Enter flag -i and filename\n" RESET);
+}
+
+void DelNameExt(OptionsProc *pOptions)
+{   
+    yaissert(pOptions != NULL);
+    yaissert(pOptions->filename != NULL);
+
+    char *f = pOptions->filename;
+    int lenf = (int)strlen(f);
+    int i = lenf - 1;
+
+    while(i > 0 && f[i] != '.')
+        i--;
+
+    if(i <= 0)
+        return;
+
+    for(int j = 0; i + j < lenf; j++)
+        (pOptions->filename)[i + j] = '\0';
+}
+
+char *CreateName(char *filename, const char *ext)
+{
+    yaissert(filename != NULL);
+
+    char *nameOut = (char *)safe_calloc(strlen(filename) + strlen("./Code_/.") + 2 * strlen(ext), sizeof(char));
+    strcpy(nameOut, "./Code_");
+    strcat(nameOut, ext);
+    strcat(nameOut, "/");
+    strcat(nameOut, filename);
+    strcat(nameOut, ".");
+    strcat(nameOut, ext);
+    return nameOut;
+}
+
+ByteCodeStruct ReadFileBytecode(char *fileName)
+{
+    yaissert(fileName != NULL);
+    
+    ByteCodeStruct byteCodeStruct;
+    char mode[] = "rb";
+    FILE *pFile = safe_fopen(fileName, mode);
+
+    struct stat fileStat = {};
+    fstat(fileno(pFile), &fileStat);
+    size_t fileSize = fileStat.st_size;
+    
+    // printf("Size of file = " RED "%lli bytes\n\n\n" RESET, fileSize);
+    byteCodeStruct.size = fileSize;
+    byteCodeStruct.byteCode = (unsigned char *)safe_calloc((size_t)fileSize + 1, sizeof(unsigned char));
+    
+    size_t nReadBytes = safe_fread((void *) byteCodeStruct.byteCode, sizeof(unsigned char), fileSize, pFile);
+    warning (nReadBytes == fileSize, "nReadBytes not equals fileSize");
+    yaissert(nReadBytes == fileSize);
+
+    fclose(pFile);
+    return byteCodeStruct;
+}
+
+
 void PrintProcessor(ProcessorStruct *proc)
 {
+    yaissert(proc != NULL);
+
     PrintBytecode(proc);
     PrintRegisters(proc);
     PrintReturns(proc);
@@ -26,12 +124,15 @@ void PrintProcessor(ProcessorStruct *proc)
 
 void PrintBytecode(ProcessorStruct *proc)
 {
+    yaissert(proc != NULL);
+
     size_t size = proc->byteCodeStruct.size;
     size_t ip = proc->ip;
     size_t n = number_of_elem_on_line;
     for(size_t i = 0; i < size; i++)
     {
-
+        if (i == 0)
+            printf(MAGENTA " %02X\n" RESET, (unsigned int)i);
         if((i + 1) % n == 1 || (i + 1) == 0)
             printf("[");
 
@@ -39,31 +140,37 @@ void PrintBytecode(ProcessorStruct *proc)
             printf(RED);
         printf("%02X" RESET, proc->byteCodeStruct.byteCode[i]);
 
-        if (((i + 1) % n == 0 && (i + 1) > 0) || i == size - 1)
+        if ((i + 1) % n == 0 || i == size - 1)
         {
             printf("]\n");
             size_t delta = ip - (n * (i / n));
 
             if(delta < n)
             {
-                for(size_t j = 0; j < delta * 4 + 1; j++)
+                for(size_t j = 0; j < delta * 3 + 1 + (delta / 4) * 2; j++)
                     printf(" ");
                 printf(RED BOLD "^" RESET);
             }
             printf("\n");
+            if(i != size - 1)
+                printf(MAGENTA " %02X\n" RESET, (unsigned int)i);
         }
 
         else if (i < size - 1)
-            printf(", ");
+            printf(" ");
+        if((i + 1) % 4 == 0 && !((i + 1) % 16 == 0))
+            printf(MAGENTA "| " RESET);
     }
 }
 
 void PrintRegisters(ProcessorStruct *proc)
 {
+    yaissert(proc != NULL);
+
     printf("\n\n--------------------REGISTERS--------------------\n[");
     for(size_t i = 0; i < number_of_registers; i++)
     {
-        printf(MAGENTA "%c%c: " RESET, (char)('A' + i), 'X');
+        printf(MAGENTA "%c%c: " RESET, (char)('a' + i), 'x');
         printf("%" PRINTF_T, proc->registers[i]);
         if(i < number_of_registers - 1)
             printf(", ");
@@ -72,6 +179,8 @@ void PrintRegisters(ProcessorStruct *proc)
 
 void PrintReturns(ProcessorStruct *proc)
 {
+    yaissert(proc != NULL);
+
     printf("]\n\n---------------------RETURNS---------------------\n[");
     for(int i = 0; i < proc->stkRet->size; i++)
     {
@@ -84,6 +193,8 @@ void PrintReturns(ProcessorStruct *proc)
 
 void PrintRAM(ProcessorStruct *proc)
 {
+    yaissert(proc != NULL);
+
     size_t n = number_of_elem_on_display;
     size_t size1 = number_of_invisivle_RAM;
     size_t size2 = number_of_RAM;
@@ -142,6 +253,8 @@ ProcessorStruct *ProcessorStructInit(ByteCodeStruct byteCodeStruct)
 
 void ProcessorRegistersInit(ProcessorStruct *proc)
 {
+    yaissert(proc != NULL);
+
     proc->registers = (StackElem_t *)safe_calloc(sizeof(StackElem_t), number_of_registers);
     for(size_t i = 0; i < number_of_registers; i++)
         proc->registers[i] = POISON_V;
@@ -149,6 +262,8 @@ void ProcessorRegistersInit(ProcessorStruct *proc)
 
 void ProcessorRAMInit(ProcessorStruct *proc)
 {
+    yaissert(proc != NULL);
+
     proc->RAM = (StackElem_t *)safe_calloc(sizeof(StackElem_t), number_of_RAM);
     for(size_t i = 0; i < number_of_RAM; i++)
             proc->RAM[i] = POISON_V;
@@ -156,12 +271,16 @@ void ProcessorRAMInit(ProcessorStruct *proc)
 
 enum ERRORS_PROCESSOR ProcessorHlt(ProcessorStruct *proc)
 {
+    yaissert(proc != NULL);
+
     proc->ip = proc->byteCodeStruct.size;
     return procNoErr;
 }
 
 enum ERRORS_PROCESSOR ProcessorNotComm(ProcessorStruct *proc)
 {
+    yaissert(proc != NULL);
+
     proc->ip++;
     printf("Its not a command\n");
     return procNoErr;
@@ -169,6 +288,8 @@ enum ERRORS_PROCESSOR ProcessorNotComm(ProcessorStruct *proc)
 
 enum ERRORS_PROCESSOR ProcessorPush(ProcessorStruct *proc)
 {
+    yaissert(proc != NULL);
+
     View indexP;
     indexP.value = proc->byteCodeStruct.byteCode[proc->ip++];
     StackElem_t res = 0;
@@ -195,6 +316,8 @@ enum ERRORS_PROCESSOR ProcessorPush(ProcessorStruct *proc)
 
 void *MakeElemFromByteCode(ProcessorStruct *proc, size_t size)
 {
+    yaissert(proc != NULL);
+
     void *elem = safe_calloc(size, 1);
     for(size_t i = 0; i < size; i++)
         *((unsigned char *)elem + i) = proc->byteCodeStruct.byteCode[proc->ip++];
@@ -204,6 +327,8 @@ void *MakeElemFromByteCode(ProcessorStruct *proc, size_t size)
 
 enum ERRORS_PROCESSOR ProcessorOut(ProcessorStruct *proc)
 {
+    yaissert(proc != NULL);
+
     proc->ip++;
     StackElem_t elemThatPoped;
     StackPop(proc->stk, &elemThatPoped);
@@ -213,6 +338,8 @@ enum ERRORS_PROCESSOR ProcessorOut(ProcessorStruct *proc)
 
 enum ERRORS_PROCESSOR ProcessorPop(ProcessorStruct *proc)
 {
+    yaissert(proc != NULL);
+
     View indexP;
     indexP.value = proc->byteCodeStruct.byteCode[proc->ip++];
     StackElem_t elemThatPoped;
@@ -241,6 +368,8 @@ enum ERRORS_PROCESSOR ProcessorPop(ProcessorStruct *proc)
 
 enum ERRORS_PROCESSOR ProcessorAdd(ProcessorStruct *proc)
 {
+    yaissert(proc != NULL);
+
     proc->ip++;
     int size = proc->stk->size;
     if(size < 2)
@@ -261,6 +390,8 @@ enum ERRORS_PROCESSOR ProcessorAdd(ProcessorStruct *proc)
 
 enum ERRORS_PROCESSOR ProcessorSub(ProcessorStruct *proc)
 {
+    yaissert(proc != NULL);
+
     proc->ip++;
     int size = proc->stk->size;
     if(size < 2)
@@ -281,6 +412,8 @@ enum ERRORS_PROCESSOR ProcessorSub(ProcessorStruct *proc)
 
 enum ERRORS_PROCESSOR ProcessorDiv(ProcessorStruct *proc)
 {
+    yaissert(proc != NULL);
+
     proc->ip++;
     int size = proc->stk->size;
     if(size < 2)
@@ -308,6 +441,8 @@ enum ERRORS_PROCESSOR ProcessorDiv(ProcessorStruct *proc)
 
 enum ERRORS_PROCESSOR ProcessorMul(ProcessorStruct *proc)
 {
+    yaissert(proc != NULL);
+
     proc->ip++;
     int size = proc->stk->size;
     if(size < 2)
@@ -327,6 +462,8 @@ enum ERRORS_PROCESSOR ProcessorMul(ProcessorStruct *proc)
 
 enum ERRORS_PROCESSOR ProcessorSqrt(ProcessorStruct *proc)
 {
+    yaissert(proc != NULL);
+
     proc->ip++;
     int size = proc->stk->size;
     if(size < 1)
@@ -349,6 +486,8 @@ enum ERRORS_PROCESSOR ProcessorSqrt(ProcessorStruct *proc)
 
 enum ERRORS_PROCESSOR ProcessorJmp(ProcessorStruct *proc)
 {
+    yaissert(proc != NULL);
+
     proc->ip++;
     size_t indexToGo = *(size_t *)MakeElemFromByteCode(proc, sizeof(size_t));
     proc->ip = indexToGo;
@@ -357,6 +496,8 @@ enum ERRORS_PROCESSOR ProcessorJmp(ProcessorStruct *proc)
 
 enum ERRORS_PROCESSOR ProcessorJe(ProcessorStruct *proc)
 {
+    yaissert(proc != NULL);
+    
     int size = proc->stk->size;
     if(size < 2)
     {
@@ -379,6 +520,8 @@ enum ERRORS_PROCESSOR ProcessorJe(ProcessorStruct *proc)
 
 enum ERRORS_PROCESSOR ProcessorJne(ProcessorStruct *proc)
 {
+    yaissert(proc != NULL);
+
     int size = proc->stk->size;
     if(size < 2)
     {
@@ -400,6 +543,8 @@ enum ERRORS_PROCESSOR ProcessorJne(ProcessorStruct *proc)
 
 enum ERRORS_PROCESSOR ProcessorJa(ProcessorStruct *proc)
 {
+    yaissert(proc != NULL);
+
     int size = proc->stk->size;
     if(size < 2)
     {
@@ -421,6 +566,8 @@ enum ERRORS_PROCESSOR ProcessorJa(ProcessorStruct *proc)
 
 enum ERRORS_PROCESSOR ProcessorJae(ProcessorStruct *proc)
 {
+    yaissert(proc != NULL);
+
     int size = proc->stk->size;
     if(size < 2)
     {
@@ -442,6 +589,8 @@ enum ERRORS_PROCESSOR ProcessorJae(ProcessorStruct *proc)
 
 enum ERRORS_PROCESSOR ProcessorJb(ProcessorStruct *proc)
 {
+    yaissert(proc != NULL);
+
     int size = proc->stk->size;
     if(size < 2)
     {
@@ -463,6 +612,8 @@ enum ERRORS_PROCESSOR ProcessorJb(ProcessorStruct *proc)
 
 enum ERRORS_PROCESSOR ProcessorJbe(ProcessorStruct *proc)
 {
+    yaissert(proc != NULL);
+
     int size = proc->stk->size;
     if(size < 2)
     {
@@ -485,6 +636,8 @@ enum ERRORS_PROCESSOR ProcessorJbe(ProcessorStruct *proc)
 
 enum ERRORS_PROCESSOR ProcessorIn(ProcessorStruct *proc)
 {
+    yaissert(proc != NULL);
+    
     proc->ip++;
 
     printf("Enter number that push in stack: ");
@@ -503,6 +656,8 @@ enum ERRORS_PROCESSOR ProcessorIn(ProcessorStruct *proc)
 
 enum ERRORS_PROCESSOR ProcessorCall(ProcessorStruct *proc)
 {
+    yaissert(proc != NULL);
+    
     proc->ip++;
     size_t indexToGo = *(size_t *)MakeElemFromByteCode(proc, sizeof(size_t));
     size_t indexToRet = proc->ip;
@@ -513,6 +668,8 @@ enum ERRORS_PROCESSOR ProcessorCall(ProcessorStruct *proc)
 
 enum ERRORS_PROCESSOR ProcessorRet(ProcessorStruct *proc)
 {
+    yaissert(proc != NULL);
+    
     StackElem_t elemThatPoped = 0;
     StackPop(proc->stkRet, &elemThatPoped);
     proc->ip = (size_t)elemThatPoped;
