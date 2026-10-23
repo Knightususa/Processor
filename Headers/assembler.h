@@ -46,11 +46,19 @@ void WriteArgToByteCode(unsigned char *byteCode, size_t *indexByteCode, void *ar
 
 void FillLabel(CmdToWriteInfo *cmdInfo);
 void WriteCmdToBytecode(CmdToWriteInfo *cmdInfo);
+void WriteIfHaveLabel(CmdToWriteInfo *cmdInfo, unsigned char index);
+
 void WriteOneArgCmd(CmdToWriteInfo *cmdInfo);
 void WriteIfHaveFields(CmdToWriteInfo *cmdInfo, unsigned char index);
+void WriteIfHaveFields1Arg(View indexP, CmdToWriteInfo* cmdInfo, char *firstStr, bool is_VRAM);
+void WriteIfHaveFields2Arg(View indexP, CmdToWriteInfo* cmdInfo, char *firstStr, char *secondStr, bool is_VRAM);
+
+
 bool IsIndexEqual(unsigned char index1, unsigned char index2);
 
 void WriteByteCode(char *fileName, ByteCodeStruct byteCodeStruct);
+
+void CheckCmdInfo(CmdToWriteInfo *cmdInfo);
 
 #endif
 //end #ifndef ASSEMBLER_H

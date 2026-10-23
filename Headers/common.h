@@ -2,6 +2,7 @@
 #define COMMON_H
 
 #include "./global.h"
+#include "./colors.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -24,7 +25,7 @@
 {                                                                                                                   \
     if (!(usl))                                                                                                     \
     {                                                                                                               \
-        printf("\n" RED text RESET "\n%s:%i\n", __FILE__, __LINE__);                                                \
+        printf("\n" _RED text _RESET "\n%s:%i\n", __FILE__, __LINE__);                                                \
     }                                                                                                               \
 }
 

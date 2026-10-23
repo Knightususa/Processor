@@ -12,6 +12,7 @@
 #include "./common.h"
 #include "../Stack_lib/Headers/dump.h"
 #include "../Stack_lib/Headers/stack.h"
+#include "../Headers/draw_func.h"
 
 
 #ifdef PROC_DEBUG
@@ -91,8 +92,13 @@ enum ERRORS_PROCESSOR ProcessorIn(ProcessorStruct *proc);
 enum ERRORS_PROCESSOR ProcessorCall(ProcessorStruct *proc);
 enum ERRORS_PROCESSOR ProcessorRet(ProcessorStruct *proc);
 
+enum ERRORS_PROCESSOR ProcessorOutc(ProcessorStruct *proc);
+enum ERRORS_PROCESSOR ProcessorDraw(ProcessorStruct *proc);
+
 enum ERRORS_PROCESSOR ProcessorNotComm(ProcessorStruct *proc);
 
+
+void CheckProc(ProcessorStruct *proc);
 
 
 typedef struct
@@ -129,13 +135,11 @@ CommandProcessor commands_processor[] =
     {.function = *ProcessorCall},
     {.function = *ProcessorRet},
 
+    {.function = *ProcessorOutc},
+    {.function = *ProcessorDraw},
+
     {.function = *ProcessorNotComm},
 };
-
-
-const size_t number_of_registers = 10;
-const size_t number_of_RAM = 300;
-const size_t number_of_invisivle_RAM = 100;
 
 const size_t number_of_elem_on_line    = 16;//How much elem of bytecode show PrintProcessor
 const size_t number_of_elem_on_display = 20;//How much elem of bytecode show PrintProcessor
