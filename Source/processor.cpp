@@ -168,11 +168,11 @@ void PrintRegisters(ProcessorStruct *proc)
     yaissert(proc != NULL);
 
     printf("\n\n--------------------REGISTERS--------------------\n[");
-    for(size_t i = 0; i < size_registers; i++)
+    for(size_t i = 0; i < number_of_registers; i++)
     {
         printf(MAGENTA "%c%c: " RESET, (char)('a' + i), 'x');
         printf("%" PRINTF_T, proc->registers[i]);
-        if(i < size_registers - 1)
+        if(i < number_of_registers - 1)
             printf(", ");
     }
 }
@@ -196,9 +196,9 @@ void PrintRAM(ProcessorStruct *proc)
     yaissert(proc != NULL);
 
     size_t n = number_of_elem_on_display;
-    size_t size1 = size_VRAM;
-    size_t size2 = size_RAM;
-    printf("\n\n-----------------------RAM-----------------------\n");
+    size_t size1 = number_of_invisivle_RAM;
+    size_t size2 = number_of_RAM;
+    printf("\n\n-----------------------RAM (INVISIBLE PART)-----------------------\n");
     for(size_t i = 0; i < size1; i++)
     {
         if((i + 1) % n == 1 || (i + 1) == 0)
@@ -213,7 +213,7 @@ void PrintRAM(ProcessorStruct *proc)
             printf(", ");
     }
 
-    printf("\n\n\n\n-----------------------VRAM-----------------------\n");
+    printf("\n\n\n\n-----------------------RAM (VISIBLE PART)-----------------------\n");
     for(size_t i = size1; i < size2; i++)
     {
         if((i + 1) % n == 1 || (i + 1) == 0)
@@ -255,8 +255,8 @@ void ProcessorRegistersInit(ProcessorStruct *proc)
 {
     yaissert(proc != NULL);
 
-    proc->registers = (StackElem_t *)safe_calloc(sizeof(StackElem_t), size_registers);
-    for(size_t i = 0; i < size_registers; i++)
+    proc->registers = (StackElem_t *)safe_calloc(sizeof(StackElem_t), number_of_registers);
+    for(size_t i = 0; i < number_of_registers; i++)
         proc->registers[i] = POISON_V;
 }
 
@@ -264,8 +264,8 @@ void ProcessorRAMInit(ProcessorStruct *proc)
 {
     yaissert(proc != NULL);
 
-    proc->RAM = (StackElem_t *)safe_calloc(sizeof(StackElem_t), size_RAM);
-    for(size_t i = 0; i < size_RAM; i++)
+    proc->RAM = (StackElem_t *)safe_calloc(sizeof(StackElem_t), number_of_RAM);
+    for(size_t i = 0; i < number_of_RAM; i++)
             proc->RAM[i] = POISON_V;
 }
 
@@ -295,7 +295,9 @@ enum ERRORS_PROCESSOR ProcessorPush(ProcessorStruct *proc)
     StackElem_t res = 0;
 
     if(indexP.bits.b2)
+    {
         res += proc->registers[proc->byteCodeStruct.byteCode[proc->ip++]];
+    }
 
     if(indexP.bits.b1)
     {
@@ -304,7 +306,9 @@ enum ERRORS_PROCESSOR ProcessorPush(ProcessorStruct *proc)
     }
 
     if(indexP.bits.b3)
+    {
         res = proc->RAM[(size_t)res];
+    }
 
     StackPush(proc->stk, res);
     return procNoErr;
@@ -359,8 +363,6 @@ enum ERRORS_PROCESSOR ProcessorPop(ProcessorStruct *proc)
         proc->RAM[(size_t)res] = elemThatPoped;
     else
         proc->registers[indexReg] = elemThatPoped;
-
-    // printf("res = %lg\n",res);
     return procNoErr;
 }
 

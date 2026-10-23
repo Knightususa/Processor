@@ -109,9 +109,5 @@ typedef union
 #define CommandMaxLen  31
 #define ArgumentMaxLen 31
 
-const size_t size_RAM = 300;
-const size_t size_VRAM = 100;
-const size_t size_registers = 10;
-
 #endif
 //end #ifndef GLOBAL_H

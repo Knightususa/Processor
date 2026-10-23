@@ -66,7 +66,7 @@ char *CreateName(char *filename, const char *ext)
 {
     yaissert(filename != NULL);
 
-    char *nameOut = (char *)safe_calloc(strlen(filename) + strlen("./Code_/.") + 2 * strlen(ext) + 1, sizeof(char));
+    char *nameOut = (char *)safe_calloc(strlen(filename) + strlen("./Code_/.") + 2 * strlen(ext), sizeof(char));
     strcpy(nameOut, "./Code_");
     strcat(nameOut, ext);
     strcat(nameOut, "/");
@@ -82,8 +82,6 @@ ByteCodeStruct ProcReadFile(char *fileName)
 
     char mode[] = "rb";
     FILE *pFile = safe_fopen(fileName, mode);
-
-    yaissert(pFile != NULL);
 
     struct stat fileStat = {};
     fstat(fileno(pFile), &fileStat);
@@ -237,14 +235,10 @@ void WriteByteCode(char *fileName, ByteCodeStruct byteCodeStruct)
 
 void ParserCmdFromStr(char *pointerToStrWithCmd, unsigned char *byteCode, size_t *indexByteCode, Label *labels)
 {
-    warning(pointerToStrWithCmd != NULL, "pointerToStrWithCmd is NULL");
-    if(pointerToStrWithCmd == NULL)
-        return;
+    yaissert(pointerToStrWithCmd != NULL);
     yaissert(byteCode != NULL);
     yaissert(indexByteCode != NULL);
     yaissert(labels != NULL);
-
-    printf("str = <%s>\n", pointerToStrWithCmd);
 
     char inputCommand[CommandMaxLen + 1] = "";
     char inputArg[ArgumentMaxLen + 1] = "";
@@ -305,28 +299,29 @@ void DivideStrToPiece(char *pointerToStrWithCmd, char *inputCommand, char *input
 
 void FillLabel(CmdToWriteInfo *cmdInfo)
 {
-    CheckCmdInfo(cmdInfo);
+    yaissert(cmdInfo != NULL);
+    yaissert(cmdInfo->byteCode != NULL);
+    yaissert(cmdInfo->indexByteCode != NULL);
+    yaissert(cmdInfo->inputArg != NULL);
+    yaissert(cmdInfo->inputCommand != NULL);
+    yaissert(cmdInfo->labels != NULL);
 
     char *inputCommand1 = cmdInfo->inputCommand + 1;
-    char *inputCommand2 = (char *)safe_calloc(strlen(inputCommand1), sizeof(char));
-    sscanf(inputCommand1, "%[^ ]", inputCommand2);
-
     for(int i = 0; i < number_of_labels; i++)
     {
         if(cmdInfo->labels[i].name == NULL)
         {
-            cmdInfo->labels[i].name = (char *)safe_calloc(strlen(inputCommand2), sizeof(char));
-            sscanf(inputCommand2, "%[^ ]", cmdInfo->labels[i].name);
+            cmdInfo->labels[i].name = strdup(inputCommand1); 
             cmdInfo->labels[i].pointer = *cmdInfo->indexByteCode;
             return;
         }
 
-        if(strcmp(cmdInfo->labels[i].name, inputCommand2) == 0)
+        if(strcmp(cmdInfo->labels[i].name, inputCommand1) == 0)
             return;
 
         if(i == number_of_labels - 1 && cmdInfo->labels[i].name != NULL)
         {
-            printf("Entered %s, but it cant be a label because its already maximum of labels\n", inputCommand2);
+            printf("Entered %s, but it cant be a label because its already maximum of labels\n", inputCommand1);
             return;
         }
     }
@@ -334,7 +329,12 @@ void FillLabel(CmdToWriteInfo *cmdInfo)
 
 void WriteCmdToBytecode(CmdToWriteInfo *cmdInfo)
 {
-    CheckCmdInfo(cmdInfo);
+    yaissert(cmdInfo != NULL);
+    yaissert(cmdInfo->byteCode != NULL);
+    yaissert(cmdInfo->indexByteCode != NULL);
+    yaissert(cmdInfo->inputArg != NULL);
+    yaissert(cmdInfo->inputCommand != NULL);
+    yaissert(cmdInfo->labels != NULL);
 
     COMMAND_INDEX index = commands_global_[cmdInfo->indexInCmdArr].index;
     if (commands_global_[cmdInfo->indexInCmdArr].args == 1)
@@ -347,12 +347,29 @@ void WriteCmdToBytecode(CmdToWriteInfo *cmdInfo)
 
 void WriteOneArgCmd(CmdToWriteInfo *cmdInfo)
 {
-    CheckCmdInfo(cmdInfo);
+    yaissert(cmdInfo != NULL);
+    yaissert(cmdInfo->byteCode != NULL);
+    yaissert(cmdInfo->indexByteCode != NULL);
+    yaissert(cmdInfo->inputArg != NULL);
+    yaissert(cmdInfo->inputCommand != NULL);
+    yaissert(cmdInfo->labels != NULL);
 
     COMMAND_INDEX index = notcmd_index;
     if(cmdInfo->inputArg[0] == ':')
     {
-        WriteIfHaveLabel(cmdInfo, index);
+        char *inputArg1 = cmdInfo->inputArg + 1;
+        size_t arg = 0;
+        for(int i = 0; i < number_of_labels; i++)
+        {
+            if(cmdInfo->labels[i].name != NULL && strcmp(cmdInfo->labels[i].name, inputArg1) == 0)
+            {
+                index = commands_global_[cmdInfo->indexInCmdArr].index;
+                arg = cmdInfo->labels[i].pointer;
+                break;
+            }
+        }
+        cmdInfo->byteCode[(*cmdInfo->indexByteCode)++] = (unsigned char)index;
+        WriteArgToByteCode(cmdInfo->byteCode, cmdInfo->indexByteCode, (void *)&arg, sizeof(size_t));
         return;
     }
 
@@ -378,136 +395,81 @@ void WriteOneArgCmd(CmdToWriteInfo *cmdInfo)
     WriteArgToByteCode(cmdInfo->byteCode, cmdInfo->indexByteCode, &arg, sizeof(StackElem_t));
 }
 
-void WriteIfHaveLabel(CmdToWriteInfo *cmdInfo, unsigned char index)
-{
-    char *inputArg1 = cmdInfo->inputArg + 1;
-    char *inputArg2 = (char *)safe_calloc(strlen(inputArg1), sizeof(char));
-    sscanf(inputArg1, "%[^ ]", inputArg2);
-
-    size_t arg = 0;
-    for(int i = 0; i < number_of_labels; i++)
-    {
-        if(cmdInfo->labels[i].name != NULL && strcmp(cmdInfo->labels[i].name, inputArg2) == 0)
-        {
-            index = commands_global_[cmdInfo->indexInCmdArr].index;
-            arg = cmdInfo->labels[i].pointer;
-            break;
-        }
-    }
-    cmdInfo->byteCode[(*cmdInfo->indexByteCode)++] = (unsigned char)index;
-    WriteArgToByteCode(cmdInfo->byteCode, cmdInfo->indexByteCode, (void *)&arg, sizeof(size_t));
-    return;
-}
-
 void WriteIfHaveFields(CmdToWriteInfo *cmdInfo, unsigned char index)
 {
-    CheckCmdInfo(cmdInfo);
+    yaissert(cmdInfo != NULL);
+    yaissert(cmdInfo->byteCode != NULL);
+    yaissert(cmdInfo->indexByteCode != NULL);
+    yaissert(cmdInfo->inputArg != NULL);
+    yaissert(cmdInfo->inputCommand != NULL);
+    yaissert(cmdInfo->labels != NULL);
 
     char *input = cmdInfo->inputArg;
     View indexP;
     indexP.value = index;
-    
-    bool is_VRAM = 0;
     if(cmdInfo->inputArg[0] == '[')
     {
         indexP.bits.b3 = 1;   
         input += 1;
     }
-    if(cmdInfo->inputArg[0] == '{')
-    {
-        indexP.bits.b3 = 1;   
-        input += 1;
-        is_VRAM = 1;
-    }  
         
     char *firstStr = (char *)safe_calloc(ArgumentMaxLen, sizeof(char));
     char *secondStr = (char *)safe_calloc(ArgumentMaxLen, sizeof(char));
 
     int inputN = sscanf(input, "%[^] +]%*[^-0-9]%[^] \n]", firstStr, secondStr);
-
     if(inputN == 2)
     {
-        WriteIfHaveFields2Arg(indexP, cmdInfo, firstStr, secondStr, is_VRAM);
+        indexP.bits.b1 = 1;
+        indexP.bits.b2 = 1;
+        cmdInfo->byteCode[(*cmdInfo->indexByteCode)++] = (unsigned char)indexP.value;
+        if(firstStr[1] == 'x')
+        {
+            if('a' <= firstStr[0] && firstStr[0] <= 'd')
+            {
+                unsigned char registerIndex = (unsigned char) (firstStr[0] - 'a');
+                cmdInfo->byteCode[(*cmdInfo->indexByteCode)++] = registerIndex;
+            }
+            // else
+            //     TOFILE ERROR
+            //TODO: FILE LOGS
+        }
+        // else
+        //     TOFILE ERROR
+        //TODO: FILE LOGS
+
+        StackElem_t konst = 0;
+        sscanf(secondStr, "%" PRINTF_T, &konst);//TODO: handle inputN
+        WriteArgToByteCode(cmdInfo->byteCode, cmdInfo->indexByteCode, &konst, sizeof(StackElem_t));
         return;
     }
     else if(inputN == 1)
     {
-        WriteIfHaveFields1Arg(indexP, cmdInfo, firstStr, is_VRAM);
+        if(firstStr[1] == 'x')
+        {
+            indexP.bits.b2 = 1;
+            cmdInfo->byteCode[(*cmdInfo->indexByteCode)++] = (unsigned char)indexP.value;
+            if('a' <= firstStr[0] && firstStr[0] <= 'd')
+            {
+                unsigned char registerIndex = (unsigned char) (firstStr[0] - 'a');
+                cmdInfo->byteCode[(*cmdInfo->indexByteCode)++] = registerIndex;
+            }
+            // else
+            //     TOFILE ERROR
+            //TODO: FILE LOGS
+        }
+        else
+        {
+            indexP.bits.b1 = 1;
+            cmdInfo->byteCode[(*cmdInfo->indexByteCode)++] = (unsigned char)indexP.value;
+            StackElem_t konst = 0;
+            sscanf(firstStr, "%" PRINTF_T, &konst);//TODO: handle inputN
+            WriteArgToByteCode(cmdInfo->byteCode, cmdInfo->indexByteCode, &konst, sizeof(StackElem_t));
+        }
         return;
     }
     // else
     //     TOFILE ERROR
     //TODO: FILE LOGS
-}
-
-void WriteIfHaveFields2Arg(View indexP, CmdToWriteInfo* cmdInfo, char *firstStr, char *secondStr, bool is_VRAM)
-{
-    indexP.bits.b1 = 1;
-    indexP.bits.b2 = 1;
-    cmdInfo->byteCode[(*cmdInfo->indexByteCode)++] = (unsigned char)indexP.value;
-    
-
-    if(firstStr[1] == 'x')
-    {
-        if('a' <= firstStr[0] && firstStr[0] <= 'd')
-        {
-            unsigned char registerIndex = (unsigned char) (firstStr[0] - 'a');
-            cmdInfo->byteCode[(*cmdInfo->indexByteCode)++] = registerIndex;
-        }
-        // else
-        //     TOFILE ERROR
-        //TODO: FILE LOGS
-    }
-    // else
-    //     TOFILE ERROR
-    //TODO: FILE LOGS
-
-    StackElem_t konst = 0;
-    sscanf(secondStr, "%" PRINTF_T, &konst);//TODO: handle inputN
-    
-    if(is_VRAM)
-        konst += (size_RAM - size_VRAM);
-
-    WriteArgToByteCode(cmdInfo->byteCode, cmdInfo->indexByteCode, &konst, sizeof(StackElem_t));
-    return;
-}
-
-void WriteIfHaveFields1Arg(View indexP, CmdToWriteInfo* cmdInfo, char *firstStr, bool is_VRAM)
-{
-    if(firstStr[1] == 'x')
-    {
-        indexP.bits.b2 = 1;
-
-        cmdInfo->byteCode[(*cmdInfo->indexByteCode)++] = (unsigned char)indexP.value;
-        if('a' <= firstStr[0] && firstStr[0] <= 'd')
-        {
-            unsigned char registerIndex = (unsigned char) (firstStr[0] - 'a');
-            cmdInfo->byteCode[(*cmdInfo->indexByteCode)++] = registerIndex;
-
-            if(is_VRAM)
-            {
-                indexP.bits.b1 = 1;
-                StackElem_t konst = (size_RAM - size_VRAM);
-                WriteArgToByteCode(cmdInfo->byteCode, cmdInfo->indexByteCode, &konst, sizeof(StackElem_t));
-            }
-        }
-        // else
-        //     TOFILE ERROR
-        //TODO: FILE LOGS
-    }
-    else
-    {
-        indexP.bits.b1 = 1;
-        cmdInfo->byteCode[(*cmdInfo->indexByteCode)++] = (unsigned char)indexP.value;
-        StackElem_t konst = 0;
-        sscanf(firstStr, "%" PRINTF_T, &konst);//TODO: handle inputN
-        
-        if(is_VRAM)
-            konst += (size_RAM - size_VRAM);
-
-        WriteArgToByteCode(cmdInfo->byteCode, cmdInfo->indexByteCode, &konst, sizeof(StackElem_t));
-    }
-    return;
 }
 
 bool IsIndexEqual(unsigned char index1, unsigned char index2)
@@ -535,14 +497,3 @@ bool IsIndexEqual(unsigned char index1, unsigned char index2)
 //     }
 //     return a[i] - 
 // }
-
-
-void CheckCmdInfo(CmdToWriteInfo *cmdInfo)
-{
-    yaissert(cmdInfo != NULL);
-    yaissert(cmdInfo->byteCode != NULL);
-    yaissert(cmdInfo->indexByteCode != NULL);
-    yaissert(cmdInfo->inputArg != NULL);
-    yaissert(cmdInfo->inputCommand != NULL);
-    yaissert(cmdInfo->labels != NULL);
-}

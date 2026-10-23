@@ -1,3 +1,7 @@
-push 1
-pop {34}
-hlt
+PUSH 1
+PUSH 1
+POP AX
+PUSH AX + 3
+POP [0]
+OUT
+HLT

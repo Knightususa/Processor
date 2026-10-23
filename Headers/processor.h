@@ -132,6 +132,11 @@ CommandProcessor commands_processor[] =
     {.function = *ProcessorNotComm},
 };
 
+
+const size_t number_of_registers = 10;
+const size_t number_of_RAM = 300;
+const size_t number_of_invisivle_RAM = 100;
+
 const size_t number_of_elem_on_line    = 16;//How much elem of bytecode show PrintProcessor
 const size_t number_of_elem_on_display = 20;//How much elem of bytecode show PrintProcessor
 //TODO: rename to VM

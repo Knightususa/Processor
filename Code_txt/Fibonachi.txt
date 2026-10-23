@@ -1,30 +1,55 @@
+// fib.asm
+// Читает n из stdin, выводит Fib(n)
+
 in
 pop ax
-call :fibonachi
+
+push 0
+pop bx
+
+push ax
+push 0
+jbe :print
+
+push ax
+push 1
+jne :setup
+
+push 1
+pop bx
+jmp :print
+
+:setup
+push 1
+pop cx
+
+push 2
+pop dx
+
+:loop
+push dx
+push ax
+ja :print
+
+push bx
+push cx
+add
+pop ex
+
+push cx
+pop bx
+
+push ex
+pop cx
+
+push dx
+push 1
+add
+pop dx
+
+jmp :loop
+
+:print
 push bx
 out
 hlt
-:fibonachi
-
-    //if1 
-    push ax 
-    push 2s
-    ja :else1
-        push 1
-        pop bx
-        ret
-
-    :else1
-        push ax + -1
-        push ax + -2
-
-        pop ax
-        call :fibonachi
-
-        pop ax
-        push bx
-        call :fibonachi
-        push bx
-        add
-        pop bx
-        ret
