@@ -1,0 +1,98 @@
+push 50
+pop bx
+
+push 50
+pop cx
+
+initw
+
+:sbros
+    push 0
+    pop ax
+
+:proverka
+    push ax
+    push 50
+    je :sbros
+        call :krugi
+        push ax + 1
+        pop ax
+        jmp :proverka
+
+
+
+:krugi
+    push 0
+    pop dx
+    push 0
+    pop ex
+    call :krug
+    draw
+    ret
+
+hlt
+
+:krug
+    push dx
+    push 100
+    je :endcolumn
+        push ex
+        push 100
+        je :endrow
+            push dx
+            push bx
+            sub
+            push dx
+            push bx
+            sub
+            mul
+
+            push ex
+            push cx
+            sub
+            push ex
+            push cx
+            sub
+            mul
+            add
+
+            push ax
+            push ax
+            mul
+            jb :inside
+                push dx
+                push 100
+                mul
+                push ex
+                add
+                pop fx
+                push 0
+                pop {fx}
+                jmp :endif
+
+            :inside
+                push dx
+                push 100
+                mul
+                push ex
+                add
+                pop fx
+                //TODO color
+                push 255
+                pop {fx}
+                jmp :endif
+
+            :endif
+            push ex + 1
+            pop ex
+            jmp :krug
+
+        :endrow
+            push 0
+            pop ex
+            push dx + 1
+            pop dx
+            jmp :krug
+        
+    :endcolumn
+        ret

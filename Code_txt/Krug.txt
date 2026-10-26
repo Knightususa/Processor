@@ -1,0 +1,179 @@
+call :printRad
+in
+pop ax
+
+call :printCentY
+in
+pop bx
+
+call :printCentX
+in
+pop cx
+
+push 0
+pop dx
+push 0
+pop ex
+call :krug
+
+initw
+draw
+hlt
+
+:krug
+    push dx
+    push 100
+    je :endcolumn
+        push ex
+        push 100
+        je :endrow
+            push dx
+            push bx
+            sub
+            push dx
+            push bx
+            sub
+            mul
+
+            push ex
+            push cx
+            sub
+            push ex
+            push cx
+            sub
+            mul
+            add
+
+            push ax
+            push ax
+            mul
+            jb :inside
+                push dx
+                push 100
+                mul
+                push ex
+                add
+                pop fx
+                push 0
+                pop {fx}
+                jmp :endif
+
+            :inside
+                push dx
+                push 100
+                mul
+                push ex
+                add
+                pop fx
+                //TODO color
+                push 255
+                pop {fx}
+                jmp :endif
+
+            :endif
+            push ex + 1
+            pop ex
+            jmp :krug
+
+        :endrow
+            push 0
+            pop ex
+            push dx + 1
+            pop dx
+            push dx
+            out
+            jmp :krug
+        
+    :endcolumn
+        ret
+            
+:printRad
+    push E
+    outc
+    push n
+    outc
+    push t
+    outc
+    push e
+    outc
+    push r
+    outc
+    push _
+    outc
+    push r
+    outc
+    push a
+    outc
+    push d
+    outc
+    push i
+    outc
+    push u
+    outc
+    push s
+    outc
+    push 10
+    outc
+    ret
+
+:printCentY
+    push E
+    outc
+    push n
+    outc
+    push t
+    outc
+    push e
+    outc
+    push r
+    outc
+    push _
+    outc
+    push c
+    outc
+    push e
+    outc
+    push n
+    outc
+    push t
+    outc
+    push e
+    outc
+    push r
+    outc
+    push Y
+    outc
+    push 10
+    outc
+    ret
+
+:printCentX
+    push E
+    outc
+    push n
+    outc
+    push t
+    outc
+    push e
+    outc
+    push r
+    outc
+    push _
+    outc
+    push c
+    outc
+    push e
+    outc
+    push n
+    outc
+    push t
+    outc
+    push e
+    outc
+    push r
+    outc
+    push X
+    outc
+    push 10
+    outc
+    ret

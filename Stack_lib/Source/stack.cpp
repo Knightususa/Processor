@@ -44,7 +44,7 @@ enum ERRORS_STACK StackInit(Stack_t *stk)
 
     if (stk->capacity <= 0)
     {
-        printf(RED "\nCapacity must be > 0\n" RESET);
+        printf(_RED "\nCapacity must be > 0\n" _RESET);
         return stackNoInit;
     }
     CANARY_PROTECTION(stk->arbusL =  stk->arbusDefault;
@@ -54,7 +54,7 @@ enum ERRORS_STACK StackInit(Stack_t *stk)
     
     if (stk->data == NULL)
     {
-        printf(RED "\nCan't create stack(\n\n" RESET);
+        printf(_RED "\nCan't create stack(\n\n" _RESET);
         return stackNoInit;
     }
     
@@ -69,7 +69,7 @@ enum ERRORS_STACK StackInit(Stack_t *stk)
     HASH_PROTECTION(stk->hashData = CalculateHashData(*stk);
                     stk->hashStack = CalculateHashStack(*stk);)
 
-    // printf(MAGENTA "\nCreate and initialize stack successfully\n\n" RESET);
+    // printf(MAGENTA "\nCreate and initialize stack successfully\n\n" _RESET);
 
     return stackNoErr;
 }
@@ -79,7 +79,7 @@ enum ERRORS_STACK StackDestroy(Stack_t *stk)
     enum ERRORS_STACK checkStack = CheckStack(*stk);
     if(checkStack != stackNoErr)
     {
-        printf(RED " when trying to destroy\n\n" RESET);
+        printf(_RED " when trying to destroy\n\n" _RESET);
         yaissert(StackDump(stk));
         return checkStack;
     }
@@ -97,7 +97,7 @@ enum ERRORS_STACK StackDestroy(Stack_t *stk)
     HASH_PROTECTION(stk->hashData = CalculateHashData(*stk);
                     stk->hashStack = CalculateHashStack(*stk);)
 
-    // printf(MAGENTA "\nDestroy stack successfully\n\n" RESET);
+    // printf(MAGENTA "\nDestroy stack successfully\n\n" _RESET);
     return stackNoErr;
 }
 
@@ -107,7 +107,7 @@ enum ERRORS_STACK StackPush(Stack_t *stk, StackElem_t elem)
     yaissert(Verificator(stk));
     if(checkStack != stackNoErr)
     {
-        printf(RED " when trying to push\n\n" RESET);
+        printf(_RED " when trying to push\n\n" _RESET);
         yaissert(StackDump(stk));
         return checkStack;
     }
@@ -124,7 +124,7 @@ enum ERRORS_STACK StackPush(Stack_t *stk, StackElem_t elem)
 
     HASH_PROTECTION(stk->hashData = CalculateHashData(*stk);
                     stk->hashStack = CalculateHashStack(*stk);)
-    // printf(MAGENTA "\nSuccessfully pushed\n\n" RESET);
+    // printf(MAGENTA "\nSuccessfully pushed\n\n" _RESET);
         
     return resizeUp;
 }
@@ -135,13 +135,13 @@ enum ERRORS_STACK StackPop(Stack_t *stk, StackElem_t *popValue)
     yaissert(Verificator(stk));
     if(checkStack != stackNoErr)
     {
-        printf(RED " when trying to pop\n\n" RESET);
+        printf(_RED " when trying to pop\n\n" _RESET);
         yaissert(StackDump(stk));
         return checkStack;
     }
     if (stk->size <= 0)
     {
-        printf(RED "\nStack underflow\n\n" RESET);
+        printf(_RED "\nStack underflow\n\n" _RESET);
         stk->size = 0;
         return stackUnderflow;
     }
@@ -153,7 +153,7 @@ enum ERRORS_STACK StackPop(Stack_t *stk, StackElem_t *popValue)
     HASH_PROTECTION(stk->hashData = CalculateHashData(*stk);
                     stk->hashStack = CalculateHashStack(*stk);)
 
-    // printf(MAGENTA "\nSuccessfully poped\n\n" RESET);
+    // printf(MAGENTA "\nSuccessfully poped\n\n" _RESET);
 
     enum ERRORS_STACK resizeDown = ResizeDown(stk);
 
@@ -166,7 +166,7 @@ enum ERRORS_STACK ResizeUp(Stack_t *stk)
     yaissert(Verificator(stk));
     if(checkStack != stackNoErr)
     {
-        printf(RED " when trying to resize up\n\n" RESET);
+        printf(_RED " when trying to resize up\n\n" _RESET);
         yaissert(StackDump(stk));
         return checkStack;
     }
@@ -183,7 +183,7 @@ enum ERRORS_STACK ResizeUp(Stack_t *stk)
     
     if(dataNew == NULL)
     {
-        printf(RED "\nCant resize up stack\n\n" RESET);
+        printf(_RED "\nCant resize up stack\n\n" _RESET);
         return stackOverflow;
     }
 
@@ -203,7 +203,7 @@ enum ERRORS_STACK ResizeUp(Stack_t *stk)
     HASH_PROTECTION(stk->hashData = CalculateHashData(*stk);
                     stk->hashStack = CalculateHashStack(*stk);)
 
-    // printf(MAGENTA "\nResize up stack\n\n" RESET);
+    // printf(MAGENTA "\nResize up stack\n\n" _RESET);
     return stackNoErr;
 }
 
@@ -213,7 +213,7 @@ enum ERRORS_STACK ResizeDown(Stack_t *stk)
     yaissert(Verificator(stk));
     if(checkStack != stackNoErr)
     {
-        printf(RED " when trying to resize down\n\n" RESET);
+        printf(_RED " when trying to resize down\n\n" _RESET);
         yaissert(StackDump(stk));
         return checkStack;
     }
@@ -226,7 +226,7 @@ enum ERRORS_STACK ResizeDown(Stack_t *stk)
     void *dataNew = realloc(dataOld, sizeof(StackElem_t) * (stk->capacity / 2) + 16);
     if(dataNew == NULL)
     {
-        printf(RED "\nCant resize down stack\n\n" RESET);
+        printf(_RED "\nCant resize down stack\n\n" _RESET);
         return stackNoResize;
     }
 
@@ -241,29 +241,29 @@ enum ERRORS_STACK ResizeDown(Stack_t *stk)
     HASH_PROTECTION(stk->hashData = CalculateHashData(*stk);
                     stk->hashStack = CalculateHashStack(*stk);)
 
-    // printf(MAGENTA "\nResize down stack\n\n" RESET);
+    // printf(MAGENTA "\nResize down stack\n\n" _RESET);
     return stackNoErr;
 }
 
 bool Verificator(Stack_t *stk)
 {
-    printf(MAGENTA);
+    printf(_MAGENTA);
     if (stk->data == NULL)
     {
-        printf("Pointer to data is NULL\n" RESET);
+        printf("Pointer to data is NULL\n" _RESET);
         return false;
     }
 
     if (stk->capacity <= 0)
     {
-        printf("Capacity of data <= 0\n" RESET);
+        printf("Capacity of data <= 0\n" _RESET);
         StackDump(stk);
         return false;
     }
 
     if (stk->capacity < stk->size)
     {
-        printf("Capacity less than size\n" RESET);
+        printf("Capacity less than size\n" _RESET);
         StackDump(stk);
         return false;
     }
@@ -272,7 +272,7 @@ bool Verificator(Stack_t *stk)
     {
         if (IsValuePoison(*stk, stk->data[i]))
         {
-            printf("Element of data number %i is poison value\n" RESET, i);
+            printf("Element of data number %i is poison value\n" _RESET, i);
             StackDump(stk);
             return false;
         }
@@ -282,12 +282,12 @@ bool Verificator(Stack_t *stk)
     {
         if (!IsValuePoison(*stk, stk->data[j]))
         {
-            printf("Element of data with index %i not a poison value\n" RESET, j);
+            printf("Element of data with index %i not a poison value\n" _RESET, j);
             StackDump(stk);
             return false;
         }
     }
-    printf(RESET);
+    printf(_RESET);
     return true;
 }
 
@@ -295,45 +295,45 @@ enum ERRORS_STACK CheckStack(Stack_t stk)
 {
     if(stk.data == NULL)
     {
-        printf(RED "\nPointer to data is NULL" RESET);
+        printf(_RED "\nPointer to data is NULL" _RESET);
         return stackDataPointerNull;
     }
 
     CANARY_PROTECTION(
     else if(*stk.canaryL != stk.canaryDefault)
     {
-        printf(RED "\nLeft canary in data is killed(value is edit)" RESET);
+        printf(_RED "\nLeft canary in data is killed(value is edit)" _RESET);
         return leftCanaryDataKilled;
     }
 
     else if(*stk.canaryR != stk.canaryDefault)
     {
-        printf(RED "\nRight canary in data is killed(value is edit)" RESET);
+        printf(_RED "\nRight canary in data is killed(value is edit)" _RESET);
         return rightCanaryDataKilled;
     }
 
     else if(stk.arbusL != stk.arbusDefault)
     {
-        printf(RED "\nLeft canary in stack is killed(value is edit)" RESET);
+        printf(_RED "\nLeft canary in stack is killed(value is edit)" _RESET);
         return leftCanaryStackKilled;
     }
 
     else if(stk.arbusR != stk.arbusDefault)
     {
-        printf(RED "\nRight canary in stack is killed(value is edit)" RESET);
+        printf(_RED "\nRight canary in stack is killed(value is edit)" _RESET);
         return rightCanaryStackKilled;
     })//end CANARY_PROTECTION
 
     HASH_PROTECTION(
     else if(stk.hashData != CalculateHashData(stk))
     {
-        printf(RED "\nHash of data incorrect, data may be edited" RESET);
+        printf(_RED "\nHash of data incorrect, data may be edited" _RESET);
         return hashDataIncorrect;
     }
 
     else if(stk.hashStack != CalculateHashStack(stk))
     {
-        printf(RED "\nHash of stack incorrect, stack may be edited" RESET);
+        printf(_RED "\nHash of stack incorrect, stack may be edited" _RESET);
         return hashStackIncorrect;
     })//end HASH_PROTECTION
     return stackNoErr;

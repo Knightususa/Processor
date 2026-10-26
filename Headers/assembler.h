@@ -4,6 +4,10 @@
 #include <stdbool.h>
 #include "./global.h"
 #include "../Stack_lib/Headers/stack.h"
+#include <string.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 
 typedef struct

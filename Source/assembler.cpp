@@ -1,12 +1,5 @@
-#include "../Headers/common.h"
 #include "../Headers/assembler.h"
-#include "../Stack_lib/Headers/stack.h"
-
-#include <string.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <unistd.h>
-
+#include "../Headers/common.h"
 
 main(int argc, char **argv)
 {
@@ -239,7 +232,10 @@ void ParserCmdFromStr(char *pointerToStrWithCmd, unsigned char *byteCode, size_t
 {
     warning(pointerToStrWithCmd != NULL, "pointerToStrWithCmd is NULL");
     if(pointerToStrWithCmd == NULL)
+    {
+        printf("indexByteCode = %lli\n", *indexByteCode);
         return;
+    }
     yaissert(byteCode != NULL);
     yaissert(indexByteCode != NULL);
     yaissert(labels != NULL);
@@ -373,7 +369,7 @@ void WriteOneArgCmd(CmdToWriteInfo *cmdInfo)
     StackElem_t arg = 0;
     if(sscanf(cmdInfo->inputArg, "%" PRINTF_T, &arg) == 1)
         index = commands_global_[cmdInfo->indexInCmdArr].index;
-        
+
     cmdInfo->byteCode[(*cmdInfo->indexByteCode)++] = (unsigned char)index;
     WriteArgToByteCode(cmdInfo->byteCode, cmdInfo->indexByteCode, &arg, sizeof(StackElem_t));
 }
@@ -383,6 +379,8 @@ void WriteIfHaveLabel(CmdToWriteInfo *cmdInfo, unsigned char index)
     char *inputArg1 = cmdInfo->inputArg + 1;
     char *inputArg2 = (char *)safe_calloc(strlen(inputArg1), sizeof(char));
     sscanf(inputArg1, "%[^ ]", inputArg2);
+
+    printf("command = %s\n\n", cmdInfo->inputCommand);
 
     size_t arg = 0;
     for(int i = 0; i < number_of_labels; i++)
@@ -394,6 +392,8 @@ void WriteIfHaveLabel(CmdToWriteInfo *cmdInfo, unsigned char index)
             break;
         }
     }
+    printf("index = %i\n\n", index);
+    printf("arg = %zu\n\n", arg);
     cmdInfo->byteCode[(*cmdInfo->indexByteCode)++] = (unsigned char)index;
     WriteArgToByteCode(cmdInfo->byteCode, cmdInfo->indexByteCode, (void *)&arg, sizeof(size_t));
     return;
@@ -407,7 +407,7 @@ void WriteIfHaveFields(CmdToWriteInfo *cmdInfo, unsigned char index)
     View indexP;
     indexP.value = index;
     
-    bool is_VRAM = 0;
+    bool is_VRAM = false;
     if(cmdInfo->inputArg[0] == '[')
     {
         indexP.bits.b3 = 1;   
@@ -415,16 +415,17 @@ void WriteIfHaveFields(CmdToWriteInfo *cmdInfo, unsigned char index)
     }
     if(cmdInfo->inputArg[0] == '{')
     {
-        indexP.bits.b3 = 1;   
+        indexP.bits.b3 = 1;     
         input += 1;
-        is_VRAM = 1;
+        is_VRAM = true;
     }  
         
     char *firstStr = (char *)safe_calloc(ArgumentMaxLen, sizeof(char));
     char *secondStr = (char *)safe_calloc(ArgumentMaxLen, sizeof(char));
 
     int inputN = sscanf(input, "%[^] +]%*[^-0-9]%[^] \n]", firstStr, secondStr);
-
+    // printf("inputN = %i\n", inputN);
+    // printf("firstStr = %s\n", firstStr);
     if(inputN == 2)
         WriteIfHaveFields2Arg(indexP, cmdInfo, firstStr, secondStr, is_VRAM);
         
@@ -444,7 +445,7 @@ void WriteIfHaveFields2Arg(View indexP, CmdToWriteInfo* cmdInfo, char *firstStr,
 
     if(firstStr[1] == 'x')
     {
-        if('a' <= firstStr[0] && firstStr[0] <= 'd')
+        if('a' <= firstStr[0] && firstStr[0] <= 'a' + (char)size_registers)
         {
             unsigned char registerIndex = (unsigned char) (firstStr[0] - 'a');
             cmdInfo->byteCode[(*cmdInfo->indexByteCode)++] = registerIndex;
@@ -473,15 +474,16 @@ void WriteIfHaveFields1Arg(View indexP, CmdToWriteInfo* cmdInfo, char *firstStr,
     {
         indexP.bits.b2 = 1;
 
+        if(is_VRAM)
+            indexP.bits.b1 = 1;
         cmdInfo->byteCode[(*cmdInfo->indexByteCode)++] = (unsigned char)indexP.value;
-        if('a' <= firstStr[0] && firstStr[0] <= 'd')
+        if('a' <= firstStr[0] && firstStr[0] <= 'a' + (char)size_registers)
         {
             unsigned char registerIndex = (unsigned char) (firstStr[0] - 'a');
             cmdInfo->byteCode[(*cmdInfo->indexByteCode)++] = registerIndex;
 
             if(is_VRAM)
             {
-                indexP.bits.b1 = 1;
                 StackElem_t konst = (delta_size_RAM);
                 WriteArgToByteCode(cmdInfo->byteCode, cmdInfo->indexByteCode, &konst, sizeof(StackElem_t));
             }
@@ -495,8 +497,13 @@ void WriteIfHaveFields1Arg(View indexP, CmdToWriteInfo* cmdInfo, char *firstStr,
         indexP.bits.b1 = 1;
         cmdInfo->byteCode[(*cmdInfo->indexByteCode)++] = (unsigned char)indexP.value;
         StackElem_t konst = 0;
-        sscanf(firstStr, "%" PRINTF_T, &konst);//TODO: handle inputN
+        int inputN = 0;
+        inputN = sscanf(firstStr, "%" PRINTF_T, &konst);//TODO: handle inputN
         
+        // printf("first = %c\n", firstStr[0]);
+        // printf("inputN = %i\n", inputN);
+        if(inputN != 1)
+            konst = (StackElem_t)firstStr[0];
         if(is_VRAM)
             konst += (delta_size_RAM);
 

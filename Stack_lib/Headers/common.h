@@ -24,7 +24,7 @@
 {                                                                                                                   \
     if (!(usl))                                                                                                     \
     {                                                                                                               \
-        printf("\n" RED text RESET "\n%s:%i\n", __FILE__, __LINE__);                                                \
+        printf("\n" _RED text _RESET "\n%s:%i\n", __FILE__, __LINE__);                                                \
     }                                                                                                               \
 }
 

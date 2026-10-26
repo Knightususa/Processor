@@ -63,6 +63,7 @@ void PrintBytecode(ProcessorStruct *proc);
 void PrintRegisters(ProcessorStruct *proc);
 void PrintReturns(ProcessorStruct *proc);
 void PrintRAM(ProcessorStruct *proc);
+void PrintVRAM(ProcessorStruct *proc);
 
 void *MakeElemFromByteCode(ProcessorStruct *proc, size_t size);
 
@@ -94,6 +95,9 @@ enum ERRORS_PROCESSOR ProcessorRet(ProcessorStruct *proc);
 
 enum ERRORS_PROCESSOR ProcessorOutc(ProcessorStruct *proc);
 enum ERRORS_PROCESSOR ProcessorDraw(ProcessorStruct *proc);
+enum ERRORS_PROCESSOR ProcessorInitW(ProcessorStruct *proc);
+enum ERRORS_PROCESSOR ProcessorCloseW(ProcessorStruct *proc);
+enum ERRORS_PROCESSOR ProcessorRand(ProcessorStruct *proc);
 
 enum ERRORS_PROCESSOR ProcessorNotComm(ProcessorStruct *proc);
 
@@ -108,38 +112,7 @@ typedef struct
 }CommandProcessor;
 
 
-CommandProcessor commands_processor[] = 
-{
-    {.function = *ProcessorHlt},
-    
-    {.function = *ProcessorPush},
-    {.function = *ProcessorOut},
-
-    {.function = *ProcessorPop},
-
-    {.function = *ProcessorAdd},
-    {.function = *ProcessorSub},
-    {.function = *ProcessorDiv},
-    {.function = *ProcessorMul},
-    {.function = *ProcessorSqrt},
-
-    {.function = *ProcessorJmp},
-    {.function = *ProcessorJe},
-    {.function = *ProcessorJne},
-    {.function = *ProcessorJa},
-    {.function = *ProcessorJae},
-    {.function = *ProcessorJb},
-    {.function = *ProcessorJbe},
-
-    {.function = *ProcessorIn},
-    {.function = *ProcessorCall},
-    {.function = *ProcessorRet},
-
-    {.function = *ProcessorOutc},
-    {.function = *ProcessorDraw},
-
-    {.function = *ProcessorNotComm},
-};
+extern CommandProcessor commands_processor[];
 
 const size_t number_of_elem_on_line    = 16;//How much elem of bytecode show PrintProcessor
 const size_t number_of_elem_on_display = 20;//How much elem of bytecode show PrintProcessor

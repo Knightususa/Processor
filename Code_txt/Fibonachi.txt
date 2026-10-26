@@ -37,14 +37,10 @@ hlt
     push 72
     push 67
     push 79
-    push 'a'
     push 84
     push 83
     push 10
-    push 65
 
-    outc
-    outc
     outc
     outc
     outc

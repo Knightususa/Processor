@@ -1,36 +1,41 @@
-#include "../Headers/processor.h"
+#include "../Headers/processor_func.h"
 
-// include-what-you-use -- linux
-main(int argc, char **argv)
+
+CommandProcessor commands_processor[] = 
 {
-    for(size_t i = 0; i < number_of_commands_; i++)
-        commands_processor[i].cmd = commands_global_[i];
+    {.function = *ProcessorHlt},
+    
+    {.function = *ProcessorPush},
+    {.function = *ProcessorOut},
 
-    OptionsProc Options;
-    Options.filename = NULL;
-    GetOptionsProc(argc, argv, &Options);   
-    DelNameExt(&Options);
-    char *filenamebin = CreateName(Options.filename, "bin");
+    {.function = *ProcessorPop},
 
+    {.function = *ProcessorAdd},
+    {.function = *ProcessorSub},
+    {.function = *ProcessorDiv},
+    {.function = *ProcessorMul},
+    {.function = *ProcessorSqrt},
 
-    ByteCodeStruct byteCodeStruct = ReadFileBytecode(filenamebin);
-    ProcessorStruct *proc = ProcessorStructInit(byteCodeStruct);
-    while(proc->ip < byteCodeStruct.size)
-    {
-        COMMAND_INDEX index = (COMMAND_INDEX)proc->byteCodeStruct.byteCode[proc->ip];
-        View indexP;
-        indexP.value = index;
-        // StackDump(proc->stk);
-        
-        ON_PROC_DEBUG
-        (
-        printf(CYAN "%s\n\n" _RESET, commands_processor[indexP.bits.b0].cmd.name);
-        PrintProcessor(proc);
-        )
+    {.function = *ProcessorJmp},
+    {.function = *ProcessorJe},
+    {.function = *ProcessorJne},
+    {.function = *ProcessorJa},
+    {.function = *ProcessorJae},
+    {.function = *ProcessorJb},
+    {.function = *ProcessorJbe},
 
-        commands_processor[indexP.bits.b0].function(proc);
-    }
-}
+    {.function = *ProcessorIn},
+    {.function = *ProcessorCall},
+    {.function = *ProcessorRet},
+
+    {.function = *ProcessorOutc},
+    {.function = *ProcessorDraw},
+    {.function = *ProcessorInitW},
+    {.function = *ProcessorCloseW},
+
+    {.function = *ProcessorNotComm},
+};
+// include-what-you-use -- linux
 
 void GetOptionsProc(int argc, char **argv, OptionsProc *pOptions)
 {
@@ -116,10 +121,11 @@ void PrintProcessor(ProcessorStruct *proc)
 {
     CheckProc(proc);
 
-    PrintBytecode(proc);
-    PrintRegisters(proc);
-    PrintReturns(proc);
-    PrintRAM(proc);
+    // PrintBytecode(proc);
+    // PrintRegisters(proc);
+    // PrintReturns(proc);
+    // PrintRAM(proc);
+    PrintVRAM(proc);
 }
 
 void PrintBytecode(ProcessorStruct *proc)
@@ -149,7 +155,7 @@ void PrintBytecode(ProcessorStruct *proc)
             {
                 for(size_t j = 0; j < delta * 3 + 1 + (delta / 4) * 2; j++)
                     printf(" ");
-                printf(_RED BOLD "^" _RESET);
+                printf(_RED _BOLD "^" _RESET);
             }
             printf("\n");
             if(i != size - 1)
@@ -196,8 +202,7 @@ void PrintRAM(ProcessorStruct *proc)
     CheckProc(proc);
 
     size_t n = number_of_elem_on_display;
-    size_t size1 = size_VRAM;
-    size_t size2 = size_RAM;
+    size_t size1 = delta_size_RAM;
     printf("\n\n-----------------------RAM-----------------------\n");
     for(size_t i = 0; i < size1; i++)
     {
@@ -213,17 +218,27 @@ void PrintRAM(ProcessorStruct *proc)
             printf(", ");
     }
 
-    printf("\n\n\n\n-----------------------VRAM-----------------------\n");
+    printf("\n\n\n\n");
+}
+
+void PrintVRAM(ProcessorStruct *proc)
+{
+    size_t n = number_of_elem_on_display;
+    size_t size1 = delta_size_RAM;
+    size_t size2 = delta_size_RAM + 100;
+    printf("-----------------------VRAM-----------------------\n");
     for(size_t i = size1; i < size2; i++)
     {
         if((i + 1) % n == 1 || (i + 1) == 0)
             printf("[");
 
-        if(isnan(proc->RAM[i]))
-            printf("*");
+        // if(isnan(proc->RAM[i]))
+        //     printf("*");
 
-        if(proc->RAM[i] >= 1)
-            printf("0");
+        // if(proc->RAM[i] >= 1)
+        //     printf("0");
+
+        printf("%02X", (unsigned int)proc->RAM[i]);
 
         if (((i + 1) % n == 0 && (i + 1) > 0) || i == size2 - 1)
             printf("]\n\n");
@@ -265,8 +280,11 @@ void ProcessorRAMInit(ProcessorStruct *proc)
     yaissert(proc != NULL);
 
     proc->RAM = (StackElem_t *)safe_calloc(sizeof(StackElem_t), size_RAM);
-    for(size_t i = 0; i < size_RAM; i++)
+    for(size_t i = 0; i < delta_size_RAM; i++)
             proc->RAM[i] = POISON_V;
+    for(size_t i = delta_size_RAM; i < size_RAM; i++)
+            proc->RAM[i] = 0; 
+
 }
 
 enum ERRORS_PROCESSOR ProcessorHlt(ProcessorStruct *proc)
@@ -346,9 +364,8 @@ enum ERRORS_PROCESSOR ProcessorOutc(ProcessorStruct *proc)
 enum ERRORS_PROCESSOR ProcessorDraw(ProcessorStruct *proc)
 {
     CheckProc(proc);
-
     proc->ip++;
-    Color **picture = (Color **)safe_calloc(size_VRAM, sizeof(Color));
+    Color *picture = (Color *)safe_calloc(size_VRAM, sizeof(Color));
     for(size_t y = 0; y < size_VRAM_y; y++)
     {
         for(size_t x = 0; x < size_VRAM_x; x++)
@@ -357,11 +374,42 @@ enum ERRORS_PROCESSOR ProcessorDraw(ProcessorStruct *proc)
             Pixel64 value;
             value.raw = proc->RAM[index];
             Color pixel;
-            pixel = {.r = value.bits.r, .g = value.bits.g, .b = value.bits.b, .a = value.bits.a};
-            picture[y][x] = pixel;
+            // pixel = {.r = value.bits.r, .g = value.bits.g, .b = value.bits.b, .a = value.bits.a};
+            pixel = {.r = 0, .g = 0, .b = 0, .a = (unsigned char)value.raw};
+            picture[y * size_VRAM_x + x] = pixel;
         }
     }
 
+    drawPicture(picture);
+    return procNoErr;
+}
+
+enum ERRORS_PROCESSOR ProcessorInitW(ProcessorStruct *proc)
+{
+    CheckProc(proc);
+    proc->ip++;
+    InitWindow(1200, 1200, "Picture");
+    return procNoErr;
+}
+
+enum ERRORS_PROCESSOR ProcessorCloseW(ProcessorStruct *proc)
+{
+    CheckProc(proc);
+    proc->ip++;
+    CloseWindow();
+    return procNoErr;
+}
+
+enum ERRORS_PROCESSOR ProcessorRand(ProcessorStruct *proc)
+{
+    CheckProc(proc);
+    proc->ip++;
+
+    StackElem_t powRandom = *(StackElem_t *)MakeElemFromByteCode(proc, sizeof(StackElem_t));
+    StackElem_t maxRandom = pow(10, powRandom);
+    StackElem_t random = (double)(rand() % (int)maxRandom);
+    StackElem_t normRandom = random / maxRandom;
+    StackPush(proc->stk, normRandom);
     return procNoErr;
 }
 

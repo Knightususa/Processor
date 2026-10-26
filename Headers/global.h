@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 
 #define STRINGIFY(x) #x
 #define MAKEVALUE(x) STRINGIFY(x)
@@ -37,8 +38,11 @@ enum COMMAND_INDEX
 
     outc_index    = 19,
     draw_index    = 20,
+    initw_index   = 21,
+    closew_index  = 22,
+    rand_index    = 23,
 
-    notcmd_index = 21
+    notcmd_index  = 24
 };
 
 typedef struct
@@ -54,33 +58,36 @@ typedef struct
 
 const CommandGlobal commands_global_[] = 
 {
-    {.index = hlt_index,     .name = "hlt",  .args = 0},
+    {.index = hlt_index,     .name = "hlt",    .args = 0},
     
-    {.index = push_index,    .name = "push", .args = 1},
-    {.index = out_index,     .name = "out",  .args = 0},
+    {.index = push_index,    .name = "push",   .args = 1},
+    {.index = out_index,     .name = "out",    .args = 0},
 
-    {.index = pop_index,     .name = "pop",  .args = 1},
+    {.index = pop_index,     .name = "pop",    .args = 1},
 
-    {.index = add_index,     .name = "add",  .args = 0},
-    {.index = sub_index,     .name = "sub",  .args = 0},
-    {.index = div_index,     .name = "div",  .args = 0},
-    {.index = mul_index,     .name = "mul",  .args = 0},
-    {.index = sqrt_index,    .name = "sqrt", .args = 0},
+    {.index = add_index,     .name = "add",    .args = 0},
+    {.index = sub_index,     .name = "sub",    .args = 0},
+    {.index = div_index,     .name = "div",    .args = 0},
+    {.index = mul_index,     .name = "mul",    .args = 0},
+    {.index = sqrt_index,    .name = "sqrt",   .args = 0},
 
-    {.index = jmp_index,     .name = "jmp",  .args = 1},
-    {.index = je_index,      .name = "je",   .args = 1},
-    {.index = jne_index,     .name = "jne",  .args = 1},
-    {.index = ja_index,      .name = "ja",   .args = 1},
-    {.index = jae_index,     .name = "jae",  .args = 1},
-    {.index = jb_index,      .name = "jb",   .args = 1},
-    {.index = jbe_index,     .name = "jbe",  .args = 1},
+    {.index = jmp_index,     .name = "jmp",    .args = 1},
+    {.index = je_index,      .name = "je",     .args = 1},
+    {.index = jne_index,     .name = "jne",    .args = 1},
+    {.index = ja_index,      .name = "ja",     .args = 1},
+    {.index = jae_index,     .name = "jae",    .args = 1},
+    {.index = jb_index,      .name = "jb",     .args = 1},
+    {.index = jbe_index,     .name = "jbe",    .args = 1},
 
-    {.index = in_index,      .name = "in",   .args = 0},
-    {.index = call_index,    .name = "call", .args = 1},
-    {.index = ret_index,     .name = "ret",  .args = 0},
+    {.index = in_index,      .name = "in",     .args = 0},
+    {.index = call_index,    .name = "call",   .args = 1},
+    {.index = ret_index,     .name = "ret",    .args = 0},
 
-    {.index = outc_index,    .name = "outc", .args = 0},
-    {.index = draw_index,    .name = "draw", .args = 0},
+    {.index = outc_index,    .name = "outc",   .args = 0},
+    {.index = draw_index,    .name = "draw",   .args = 0},
+    {.index = initw_index,   .name = "initw",  .args = 0},
+    {.index = closew_index,  .name = "closew", .args = 0},
+    {.index = rand_index,    .name = "rand",   .args = 1},
 
     {.index = notcmd_index, .name = "notc",  .args = 0},
 };
@@ -134,4 +141,5 @@ const size_t delta_size_RAM = size_RAM - size_VRAM;
 const size_t size_registers = 10;
 
 #endif
+
 //end #ifndef GLOBAL_H

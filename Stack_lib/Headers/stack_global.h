@@ -1,15 +1,15 @@
 #ifndef STACK_GLOBAL_H
 #define STACK_GLOBAL_H
 
-#define RESET   "\033[0m"
-#define BOLD    "\033[1m"
-#define RED     "\033[31m"
-#define GREEN   "\033[32m"
-#define YELLOW  "\033[33m"
-#define BLUE    "\033[34m"
-#define MAGENTA "\033[35m"
-#define CYAN    "\033[36m"
-#define WHITE   "\033[37m"
+#define _RESET   "\033[0m"
+#define _BOLD    "\033[1m"
+#define _RED     "\033[31m"
+#define _GREEN   "\033[32m"
+#define _YELLOW  "\033[33m"
+#define _BLUE    "\033[34m"
+#define _MAGENTA "\033[35m"
+#define _CYAN    "\033[36m"
+#define _WHITE   "\033[37m"
 
 const unsigned long long ArbusDefault = 0xDEDC0CA1;
 const unsigned long long CanaryDefault = 0xDEDC0CA1DEDC0CA1;
