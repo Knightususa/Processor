@@ -3,39 +3,41 @@
 
 CommandProcessor commands_processor[] = 
 {
-    {.function = *ProcessorHlt},
-    
-    {.function = *ProcessorPush},
-    {.function = *ProcessorOut},
+    MakeCommandProcessor(Hlt),
 
-    {.function = *ProcessorPop},
+    MakeCommandProcessor(Push),
+    MakeCommandProcessor(Out),
 
-    {.function = *ProcessorAdd},
-    {.function = *ProcessorSub},
-    {.function = *ProcessorDiv},
-    {.function = *ProcessorMul},
-    {.function = *ProcessorSqrt},
+    MakeCommandProcessor(Pop),
 
-    {.function = *ProcessorJmp},
-    {.function = *ProcessorJe},
-    {.function = *ProcessorJne},
-    {.function = *ProcessorJa},
-    {.function = *ProcessorJae},
-    {.function = *ProcessorJb},
-    {.function = *ProcessorJbe},
+    MakeCommandProcessor(Add),
+    MakeCommandProcessor(Sub),
+    MakeCommandProcessor(Div),
+    MakeCommandProcessor(Mul),
+    MakeCommandProcessor(Sqrt),
 
-    {.function = *ProcessorIn},
-    {.function = *ProcessorCall},
-    {.function = *ProcessorRet},
+    MakeCommandProcessor(Jmp),
+    MakeCommandProcessor(Je),
+    MakeCommandProcessor(Jne),
+    MakeCommandProcessor(Ja),
+    MakeCommandProcessor(Jae),
+    MakeCommandProcessor(Jb),
+    MakeCommandProcessor(Jbe),
 
-    {.function = *ProcessorOutc},
-    {.function = *ProcessorDraw},
-    {.function = *ProcessorInitW},
-    {.function = *ProcessorCloseW},
+    MakeCommandProcessor(In),
+    MakeCommandProcessor(Call),
+    MakeCommandProcessor(Ret),
 
-    {.function = *ProcessorNotComm},
+    MakeCommandProcessor(Outc),
+    MakeCommandProcessor(Draw),
+    MakeCommandProcessor(InitW),
+    MakeCommandProcessor(CloseW),
+    MakeCommandProcessor(Rand),
+
+    MakeCommandProcessor(NotCmd),
 };
-// include-what-you-use -- linux
+std::mt19937 gen(static_cast<unsigned int>(std::chrono::system_clock::now().time_since_epoch().count()));
+std::uniform_int_distribution<int> dist(0, INT32_MAX);
 
 void GetOptionsProc(int argc, char **argv, OptionsProc *pOptions)
 {
@@ -257,7 +259,7 @@ ProcessorStruct *ProcessorStructInit(ByteCodeStruct byteCodeStruct)
     ProcessorRAMInit(proc);
 
     proc->stk = (Stack_t *)safe_calloc(sizeof(Stack_t), 1);
-    StackInit(proc->stk); //TODO: error handle \ add to struct proc
+    StackInit(proc->stk);
 
     proc->stkRet = (Stack_t *)safe_calloc(sizeof(Stack_t), 1);
     StackInit(proc->stkRet);
@@ -295,7 +297,7 @@ enum ERRORS_PROCESSOR ProcessorHlt(ProcessorStruct *proc)
     return procNoErr;
 }
 
-enum ERRORS_PROCESSOR ProcessorNotComm(ProcessorStruct *proc)
+enum ERRORS_PROCESSOR ProcessorNotCmd(ProcessorStruct *proc)
 {
     CheckProc(proc);
 
@@ -371,11 +373,11 @@ enum ERRORS_PROCESSOR ProcessorDraw(ProcessorStruct *proc)
         for(size_t x = 0; x < size_VRAM_x; x++)
         {
             size_t index = y * size_VRAM_x + x + delta_size_RAM;
-            Pixel64 value;
-            value.raw = proc->RAM[index];
+            unsigned char value;
+            value = (unsigned char)proc->RAM[index];
             Color pixel;
             // pixel = {.r = value.bits.r, .g = value.bits.g, .b = value.bits.b, .a = value.bits.a};
-            pixel = {.r = 0, .g = 0, .b = 0, .a = (unsigned char)value.raw};
+            pixel = {.r = 0, .g = 0, .b = 0, .a = value};
             picture[y * size_VRAM_x + x] = pixel;
         }
     }
@@ -407,7 +409,8 @@ enum ERRORS_PROCESSOR ProcessorRand(ProcessorStruct *proc)
 
     StackElem_t powRandom = *(StackElem_t *)MakeElemFromByteCode(proc, sizeof(StackElem_t));
     StackElem_t maxRandom = pow(10, powRandom);
-    StackElem_t random = (double)(rand() % (int)maxRandom);
+    int randomValue = dist(gen);
+    StackElem_t random = randomValue % (int)maxRandom;
     StackElem_t normRandom = random / maxRandom;
     StackPush(proc->stk, normRandom);
     return procNoErr;

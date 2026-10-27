@@ -19,7 +19,7 @@ pop cx
 
 
     //скорость по y
-push 1
+push 3.4
 pop gx
 
     //скорость по x

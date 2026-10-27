@@ -217,7 +217,7 @@ void WriteByteCode(char *fileName, ByteCodeStruct byteCodeStruct)
 {
     yaissert(fileName != NULL);
 
-    char mode[] = "wb";//TODO: need to know what the dif w and wb
+    char mode[] = "wb";
     FILE *pFile = safe_fopen(fileName, mode);
 
     write(fileno(pFile), byteCodeStruct.byteCode, (unsigned int)byteCodeStruct.size);
@@ -267,7 +267,7 @@ void ParserCmdFromStr(char *pointerToStrWithCmd, unsigned char *byteCode, size_t
         return;
     }
     for(size_t i = 0; i < number_of_commands_ - 1; i++)
-        if(strcmp(inputCommand, commands_global_[i].name) == 0)//TODO: add strcmp for int
+        if(strcmp(inputCommand, commands_global_[i].name) == 0)
         {
             cmdInfo->indexInCmdArr = i;
             WriteCmdToBytecode(cmdInfo);
@@ -431,9 +431,6 @@ void WriteIfHaveFields(CmdToWriteInfo *cmdInfo, unsigned char index)
         
     else if(inputN == 1)
         WriteIfHaveFields1Arg(indexP, cmdInfo, firstStr, is_VRAM);
-    // else
-    //     TOFILE ERROR
-    //TODO: FILE LOGS
 }
 
 void WriteIfHaveFields2Arg(View indexP, CmdToWriteInfo* cmdInfo, char *firstStr, char *secondStr, bool is_VRAM)
@@ -450,17 +447,11 @@ void WriteIfHaveFields2Arg(View indexP, CmdToWriteInfo* cmdInfo, char *firstStr,
             unsigned char registerIndex = (unsigned char) (firstStr[0] - 'a');
             cmdInfo->byteCode[(*cmdInfo->indexByteCode)++] = registerIndex;
         }
-        // else
-        //     TOFILE ERROR
-        //TODO: FILE LOGS
     }
-    // else
-    //     TOFILE ERROR
-    //TODO: FILE LOGS
 
     StackElem_t konst = 0;
-    sscanf(secondStr, "%" PRINTF_T, &konst);//TODO: handle inputN
-    
+    int inputN = sscanf(secondStr, "%" PRINTF_T, &konst);
+    yaissert(inputN != 0);
     if(is_VRAM)
         konst += (delta_size_RAM);
 
@@ -488,9 +479,6 @@ void WriteIfHaveFields1Arg(View indexP, CmdToWriteInfo* cmdInfo, char *firstStr,
                 WriteArgToByteCode(cmdInfo->byteCode, cmdInfo->indexByteCode, &konst, sizeof(StackElem_t));
             }
         }
-        // else
-        //     TOFILE ERROR
-        //TODO: FILE LOGS
     }
     else
     {
@@ -498,7 +486,7 @@ void WriteIfHaveFields1Arg(View indexP, CmdToWriteInfo* cmdInfo, char *firstStr,
         cmdInfo->byteCode[(*cmdInfo->indexByteCode)++] = (unsigned char)indexP.value;
         StackElem_t konst = 0;
         int inputN = 0;
-        inputN = sscanf(firstStr, "%" PRINTF_T, &konst);//TODO: handle inputN
+        inputN = sscanf(firstStr, "%" PRINTF_T, &konst);
         
         // printf("first = %c\n", firstStr[0]);
         // printf("inputN = %i\n", inputN);
@@ -521,23 +509,6 @@ bool IsIndexEqual(unsigned char index1, unsigned char index2)
         return true;
     return false;
 }
-
-// int StrCmpInt(char *firstString, char *SecondString)//TODO: Finish it
-// {
-//     char *as = firstString;
-//     char *bs = SecondString;
-
-//     int ai = 0;
-//     int bi = 0;
-
-//     int i = 0;
-//     for(i < CommandMaxLen)
-//     {
-//         ai += 
-//     }
-//     return a[i] - 
-// }
-
 
 void CheckCmdInfo(CmdToWriteInfo *cmdInfo)
 {

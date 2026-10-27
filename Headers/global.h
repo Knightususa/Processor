@@ -52,44 +52,43 @@ typedef struct
     int args;
 }CommandGlobal;
 
-#define XXX(idx, name, args) \
-    {.index = idx,     .name = name,  .args = args},
-
+#define MakeCommandGlobal(nameCmd, argsCmd)             \
+    {.index = nameCmd ## _index, .name = #nameCmd, .args = argsCmd}
 
 const CommandGlobal commands_global_[] = 
 {
-    {.index = hlt_index,     .name = "hlt",    .args = 0},
-    
-    {.index = push_index,    .name = "push",   .args = 1},
-    {.index = out_index,     .name = "out",    .args = 0},
+    MakeCommandGlobal(hlt, 0),
 
-    {.index = pop_index,     .name = "pop",    .args = 1},
+    MakeCommandGlobal(push, 1),
+    MakeCommandGlobal(out, 0),
 
-    {.index = add_index,     .name = "add",    .args = 0},
-    {.index = sub_index,     .name = "sub",    .args = 0},
-    {.index = div_index,     .name = "div",    .args = 0},
-    {.index = mul_index,     .name = "mul",    .args = 0},
-    {.index = sqrt_index,    .name = "sqrt",   .args = 0},
+    MakeCommandGlobal(pop, 1),
 
-    {.index = jmp_index,     .name = "jmp",    .args = 1},
-    {.index = je_index,      .name = "je",     .args = 1},
-    {.index = jne_index,     .name = "jne",    .args = 1},
-    {.index = ja_index,      .name = "ja",     .args = 1},
-    {.index = jae_index,     .name = "jae",    .args = 1},
-    {.index = jb_index,      .name = "jb",     .args = 1},
-    {.index = jbe_index,     .name = "jbe",    .args = 1},
+    MakeCommandGlobal(add, 0),
+    MakeCommandGlobal(sub, 0),
+    MakeCommandGlobal(div, 0),
+    MakeCommandGlobal(mul, 0),
+    MakeCommandGlobal(sqrt, 0),
 
-    {.index = in_index,      .name = "in",     .args = 0},
-    {.index = call_index,    .name = "call",   .args = 1},
-    {.index = ret_index,     .name = "ret",    .args = 0},
+    MakeCommandGlobal(jmp, 1),
+    MakeCommandGlobal(je, 1),
+    MakeCommandGlobal(jne, 1),
+    MakeCommandGlobal(ja, 1),
+    MakeCommandGlobal(jae, 1),
+    MakeCommandGlobal(jb, 1),
+    MakeCommandGlobal(jbe, 1),
 
-    {.index = outc_index,    .name = "outc",   .args = 0},
-    {.index = draw_index,    .name = "draw",   .args = 0},
-    {.index = initw_index,   .name = "initw",  .args = 0},
-    {.index = closew_index,  .name = "closew", .args = 0},
-    {.index = rand_index,    .name = "rand",   .args = 1},
+    MakeCommandGlobal(in, 0),
+    MakeCommandGlobal(call, 1),
+    MakeCommandGlobal(ret, 0),
 
-    {.index = notcmd_index, .name = "notc",  .args = 0},
+    MakeCommandGlobal(outc, 0),
+    MakeCommandGlobal(draw, 0),
+    MakeCommandGlobal(initw, 0),
+    MakeCommandGlobal(closew, 0),
+    MakeCommandGlobal(rand, 1),
+
+    MakeCommandGlobal(notcmd, 0),
 };
 const size_t number_of_commands_ = sizeof(commands_global_) / sizeof(commands_global_[0]);
 
@@ -107,21 +106,6 @@ typedef struct
     unsigned char b3 :1;
 }BitField;
 
-typedef union 
-{
-    double raw;
-    struct
-    {
-        uint64_t r : 8;
-        uint64_t g : 8;
-        uint64_t b : 8;
-        uint64_t a : 8;
-        uint64_t   : 16;
-        uint64_t   : 8;
-        uint64_t   : 8;
-    }bits;
-}Pixel64;
-
 typedef union
 {
     unsigned char value;
@@ -135,7 +119,7 @@ const size_t size_VRAM_x = 100;
 const size_t size_VRAM_y = 100;
 const size_t size_VRAM = size_VRAM_x * size_VRAM_y;
 
-const size_t size_RAM = size_VRAM + 100;
+const size_t size_RAM = size_VRAM + 200;
 const size_t delta_size_RAM = size_RAM - size_VRAM;
 
 const size_t size_registers = 10;

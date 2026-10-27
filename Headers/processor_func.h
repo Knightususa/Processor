@@ -6,6 +6,13 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <time.h>
+
+#include <random>
+#include <chrono>
+
+extern std::mt19937 gen;
+extern std::uniform_int_distribution<int> dist;
 
 #include <stdbool.h>
 #include "./global.h"
@@ -20,6 +27,9 @@
 #else
     #define ON_PROC_DEBUG(...)
 #endif
+
+#define MakeCommandProcessor(nameCmdFunc) \
+    {.function = *Processor ## nameCmdFunc}
 
 enum ERRORS_PROCESSOR
 {
@@ -99,7 +109,7 @@ enum ERRORS_PROCESSOR ProcessorInitW(ProcessorStruct *proc);
 enum ERRORS_PROCESSOR ProcessorCloseW(ProcessorStruct *proc);
 enum ERRORS_PROCESSOR ProcessorRand(ProcessorStruct *proc);
 
-enum ERRORS_PROCESSOR ProcessorNotComm(ProcessorStruct *proc);
+enum ERRORS_PROCESSOR ProcessorNotCmd(ProcessorStruct *proc);
 
 
 void CheckProc(ProcessorStruct *proc);
@@ -116,6 +126,5 @@ extern CommandProcessor commands_processor[];
 
 const size_t number_of_elem_on_line    = 16;//How much elem of bytecode show PrintProcessor
 const size_t number_of_elem_on_display = 20;//How much elem of bytecode show PrintProcessor
-//TODO: rename to VM
 
 #endif
