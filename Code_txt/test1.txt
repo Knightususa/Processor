@@ -1,3 +1,8 @@
-rand 3
+push 1
 out
-hlt
+push <
+outc
+push 1
+outc
+push >
+outc

@@ -1,0 +1,46 @@
+initw
+
+:loop
+    call :cadr1
+    jmp :loop
+
+
+
+:cadr1
+    push 0
+    pop dx
+    push 0
+    pop ex
+    call :cadr
+    draw
+    ret
+
+:cadr
+    push dx
+    push 100
+    je :endcolumn
+        push ex
+        push 100
+        je :endrow
+            push dx
+            push 100
+            mul
+            push ex
+            add
+            pop fx
+            rand 255
+            pop {fx}
+
+            push ex + 1
+            pop ex
+            jmp :cadr
+
+        :endrow
+            push 0
+            pop ex
+            push dx + 1
+            pop dx
+            jmp :cadr
+        
+    :endcolumn
+        ret

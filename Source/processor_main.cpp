@@ -18,13 +18,14 @@ main(int argc, char **argv)
 
     SetTraceLogLevel(LOG_ERROR);
 
-
+    // int line = 0;
     while (proc->ip < byteCodeStruct.size)
     {
         COMMAND_INDEX index = (COMMAND_INDEX)proc->byteCodeStruct.byteCode[proc->ip];
         View indexP;
         indexP.value = index;
         
+        // printf("line = %i\n", line++);
         ON_PROC_DEBUG(
             printf(_CYAN "%s\n\n" _RESET, commands_processor[indexP.bits.b0].cmd.name);
             PrintProcessor(proc);

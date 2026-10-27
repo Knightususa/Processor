@@ -1,6 +1,6 @@
 #ifndef GLOBAL_H
 #define GLOBAL_H
-
+//TODO: make kartinochki v reADME
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -38,11 +38,12 @@ enum COMMAND_INDEX
 
     outc_index    = 19,
     draw_index    = 20,
-    initw_index   = 21,
-    closew_index  = 22,
-    rand_index    = 23,
+    delay_index   = 21,
+    initw_index   = 22,
+    closew_index  = 23,
+    rand_index    = 24,
 
-    notcmd_index  = 24
+    notcmd_index  = 25
 };
 
 typedef struct
@@ -84,6 +85,7 @@ const CommandGlobal commands_global_[] =
 
     MakeCommandGlobal(outc, 0),
     MakeCommandGlobal(draw, 0),
+    MakeCommandGlobal(delay, 1),
     MakeCommandGlobal(initw, 0),
     MakeCommandGlobal(closew, 0),
     MakeCommandGlobal(rand, 1),

@@ -240,7 +240,7 @@ void ParserCmdFromStr(char *pointerToStrWithCmd, unsigned char *byteCode, size_t
     yaissert(indexByteCode != NULL);
     yaissert(labels != NULL);
 
-    printf("str = <%s>\n", pointerToStrWithCmd);
+    printf("\nstr = <%s>  ", pointerToStrWithCmd);
 
     char inputCommand[CommandMaxLen + 1] = "";
     char inputArg[ArgumentMaxLen + 1] = "";
@@ -365,6 +365,13 @@ void WriteOneArgCmd(CmdToWriteInfo *cmdInfo)
         return;
     }
 
+    if(index == delay_index)
+    {
+        WriteIfHaveFields(cmdInfo, delay_index);
+        return;
+    }
+
+
     index = notcmd_index;
     StackElem_t arg = 0;
     if(sscanf(cmdInfo->inputArg, "%" PRINTF_T, &arg) == 1)
@@ -379,9 +386,6 @@ void WriteIfHaveLabel(CmdToWriteInfo *cmdInfo, unsigned char index)
     char *inputArg1 = cmdInfo->inputArg + 1;
     char *inputArg2 = (char *)safe_calloc(strlen(inputArg1), sizeof(char));
     sscanf(inputArg1, "%[^ ]", inputArg2);
-
-    printf("command = %s\n\n", cmdInfo->inputCommand);
-
     size_t arg = 0;
     for(int i = 0; i < number_of_labels; i++)
     {
@@ -392,8 +396,6 @@ void WriteIfHaveLabel(CmdToWriteInfo *cmdInfo, unsigned char index)
             break;
         }
     }
-    printf("index = %i\n\n", index);
-    printf("arg = %zu\n\n", arg);
     cmdInfo->byteCode[(*cmdInfo->indexByteCode)++] = (unsigned char)index;
     WriteArgToByteCode(cmdInfo->byteCode, cmdInfo->indexByteCode, (void *)&arg, sizeof(size_t));
     return;

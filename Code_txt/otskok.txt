@@ -23,7 +23,7 @@ push 3.4
 pop gx
 
     //скорость по x
-push 0.5
+push 1.22
 pop hx
 initw
 

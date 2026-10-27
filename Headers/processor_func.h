@@ -105,6 +105,7 @@ enum ERRORS_PROCESSOR ProcessorRet(ProcessorStruct *proc);
 
 enum ERRORS_PROCESSOR ProcessorOutc(ProcessorStruct *proc);
 enum ERRORS_PROCESSOR ProcessorDraw(ProcessorStruct *proc);
+enum ERRORS_PROCESSOR ProcessorDelay(ProcessorStruct *proc);
 enum ERRORS_PROCESSOR ProcessorInitW(ProcessorStruct *proc);
 enum ERRORS_PROCESSOR ProcessorCloseW(ProcessorStruct *proc);
 enum ERRORS_PROCESSOR ProcessorRand(ProcessorStruct *proc);

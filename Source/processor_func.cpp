@@ -30,6 +30,7 @@ CommandProcessor commands_processor[] =
 
     MakeCommandProcessor(Outc),
     MakeCommandProcessor(Draw),
+    MakeCommandProcessor(Delay),
     MakeCommandProcessor(InitW),
     MakeCommandProcessor(CloseW),
     MakeCommandProcessor(Rand),
@@ -303,6 +304,7 @@ enum ERRORS_PROCESSOR ProcessorNotCmd(ProcessorStruct *proc)
 
     proc->ip++;
     printf("Its not a command\n");
+    PrintBytecode(proc);
     return procNoErr;
 }
 
@@ -386,6 +388,30 @@ enum ERRORS_PROCESSOR ProcessorDraw(ProcessorStruct *proc)
     return procNoErr;
 }
 
+enum ERRORS_PROCESSOR ProcessorDelay(ProcessorStruct *proc)
+{
+    CheckProc(proc);
+    
+    View indexP;
+    indexP.value = proc->byteCodeStruct.byteCode[proc->ip++];
+    StackElem_t res = 0;
+
+    if(indexP.bits.b2)
+        res += proc->registers[proc->byteCodeStruct.byteCode[proc->ip++]];
+
+    if(indexP.bits.b1)
+    {
+        StackElem_t elemToPush = *(StackElem_t *)MakeElemFromByteCode(proc, sizeof(StackElem_t));
+        res += elemToPush;
+    }
+
+    if(indexP.bits.b3)
+        res = proc->RAM[(size_t)res];
+
+    WaitTime(res);
+    return procNoErr;
+}
+
 enum ERRORS_PROCESSOR ProcessorInitW(ProcessorStruct *proc)
 {
     CheckProc(proc);
@@ -407,12 +433,10 @@ enum ERRORS_PROCESSOR ProcessorRand(ProcessorStruct *proc)
     CheckProc(proc);
     proc->ip++;
 
-    StackElem_t powRandom = *(StackElem_t *)MakeElemFromByteCode(proc, sizeof(StackElem_t));
-    StackElem_t maxRandom = pow(10, powRandom);
+    StackElem_t maxRandom = *(StackElem_t *)MakeElemFromByteCode(proc, sizeof(StackElem_t));
     int randomValue = dist(gen);
     StackElem_t random = randomValue % (int)maxRandom;
-    StackElem_t normRandom = random / maxRandom;
-    StackPush(proc->stk, normRandom);
+    StackPush(proc->stk, random);
     return procNoErr;
 }
 
