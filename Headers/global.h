@@ -21,29 +21,31 @@ enum COMMAND_INDEX
     add_index     = 4,
     sub_index     = 5,
     div_index     = 6,
-    mul_index     = 7,
-    sqrt_index    = 8,
+    fmod_index    = 7,
+    mul_index     = 8,
+    sqrt_index    = 9,
+    pow_index     = 10,
    
-    jmp_index     = 9,
-    je_index      = 10,
-    jne_index     = 11,
-    ja_index      = 12,
-    jae_index     = 13,
-    jb_index      = 14,
-    jbe_index     = 15,
+    jmp_index     = 11,
+    je_index      = 12,
+    jne_index     = 13,
+    ja_index      = 14,
+    jae_index     = 15,
+    jb_index      = 16,
+    jbe_index     = 17,
 
-    in_index      = 16,
-    call_index    = 17,
-    ret_index     = 18,
+    in_index      = 18,
+    call_index    = 19,
+    ret_index     = 20,
 
-    outc_index    = 19,
-    draw_index    = 20,
-    delay_index   = 21,
-    initw_index   = 22,
-    closew_index  = 23,
-    rand_index    = 24,
+    outc_index    = 21,
+    draw_index    = 22,
+    delay_index   = 23,
+    initw_index   = 24,
+    closew_index  = 25,
+    rand_index    = 26,
 
-    notcmd_index  = 25
+    notcmd_index  = 27
 };
 
 typedef struct
@@ -68,8 +70,10 @@ const CommandGlobal commands_global_[] =
     MakeCommandGlobal(add, 0),
     MakeCommandGlobal(sub, 0),
     MakeCommandGlobal(div, 0),
+    MakeCommandGlobal(fmod, 0),
     MakeCommandGlobal(mul, 0),
     MakeCommandGlobal(sqrt, 0),
+    MakeCommandGlobal(pow, 1),
 
     MakeCommandGlobal(jmp, 1),
     MakeCommandGlobal(je, 1),

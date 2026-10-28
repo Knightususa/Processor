@@ -88,8 +88,10 @@ enum ERRORS_PROCESSOR ProcessorPop(ProcessorStruct *proc);
 enum ERRORS_PROCESSOR ProcessorAdd(ProcessorStruct *proc);
 enum ERRORS_PROCESSOR ProcessorSub(ProcessorStruct *proc);
 enum ERRORS_PROCESSOR ProcessorDiv(ProcessorStruct *proc);
+enum ERRORS_PROCESSOR ProcessorFmod(ProcessorStruct *proc);
 enum ERRORS_PROCESSOR ProcessorMul(ProcessorStruct *proc);
 enum ERRORS_PROCESSOR ProcessorSqrt(ProcessorStruct *proc);
+enum ERRORS_PROCESSOR ProcessorPow(ProcessorStruct *proc);
 
 enum ERRORS_PROCESSOR ProcessorJmp(ProcessorStruct *proc);
 enum ERRORS_PROCESSOR ProcessorJe(ProcessorStruct *proc);

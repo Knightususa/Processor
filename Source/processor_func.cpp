@@ -13,8 +13,10 @@ CommandProcessor commands_processor[] =
     MakeCommandProcessor(Add),
     MakeCommandProcessor(Sub),
     MakeCommandProcessor(Div),
+    MakeCommandProcessor(Fmod),
     MakeCommandProcessor(Mul),
     MakeCommandProcessor(Sqrt),
+    MakeCommandProcessor(Pow),
 
     MakeCommandProcessor(Jmp),
     MakeCommandProcessor(Je),
@@ -541,6 +543,27 @@ enum ERRORS_PROCESSOR ProcessorDiv(ProcessorStruct *proc)
     return procNoErr;
 }
 
+enum ERRORS_PROCESSOR ProcessorFmod(ProcessorStruct *proc)
+{
+    CheckProc(proc);
+
+    proc->ip++;
+    int size = proc->stk->size;
+    if(size < 2)
+    {
+        printf(_RED "Too few elements for fmod\n\n" _RESET);
+        return procCantDiv;
+    }
+
+    StackElem_t elem1 = 0, elem2 = 0;
+    StackPop(proc->stk, &elem2);
+    StackPop(proc->stk, &elem1);
+    StackElem_t fmod = (int)elem1 % (int)elem2;
+
+    StackPush(proc->stk, fmod);
+    return procNoErr;
+}
+
 
 
 enum ERRORS_PROCESSOR ProcessorMul(ProcessorStruct *proc)
@@ -585,6 +608,40 @@ enum ERRORS_PROCESSOR ProcessorSqrt(ProcessorStruct *proc)
 
     StackElem_t sqrt_value = sqrt(elem1);
     StackPush(proc->stk, sqrt_value);
+    return procNoErr;
+}
+
+enum ERRORS_PROCESSOR ProcessorPow(ProcessorStruct *proc)
+{
+    CheckProc(proc);
+    
+    View indexP;
+    indexP.value = proc->byteCodeStruct.byteCode[proc->ip++];
+    StackElem_t res = 0;
+
+    if(indexP.bits.b2)
+        res += proc->registers[proc->byteCodeStruct.byteCode[proc->ip++]];
+
+    if(indexP.bits.b1)
+    {
+        StackElem_t elemToPush = *(StackElem_t *)MakeElemFromByteCode(proc, sizeof(StackElem_t));
+        res += elemToPush;
+    }
+
+    if(indexP.bits.b3)
+        res = proc->RAM[(size_t)res];
+
+    int size = proc->stk->size;
+    if(size < 1)
+    {
+        printf(_RED "Too few elements for pow\n\n" _RESET);
+        return procCantMul;
+    }
+    StackElem_t elem1 = 0;
+    StackPop(proc->stk, &elem1);
+
+    StackElem_t pow_value = pow(elem1, res);
+    StackPush(proc->stk, pow_value);
     return procNoErr;
 }
 

@@ -5,6 +5,11 @@ pop [0]
 push 100
 pop [1]
 
+call :AskForN
+in
+pop [2]
+
+
     //радиус
 push 5
 pop ax
@@ -187,3 +192,53 @@ hlt
         
     :endcolumn
         ret
+
+
+:AskForN
+    push E
+    outc
+    push n
+    outc
+    push t
+    outc
+    push e
+    outc
+    push r
+    outc
+    push _
+    outc
+    push h
+    outc
+    push o
+    outc
+    push w
+    outc
+    push _
+    outc
+    push m
+    outc
+    push a
+    outc
+    push n
+    outc
+    push y
+    outc
+    push _
+    outc
+    push c
+    outc
+    push i
+    outc
+    push r
+    outc
+    push c
+    outc
+    push l
+    outc
+    push e
+    outc
+    push s
+    outc
+    push 10
+    outc
+    ret

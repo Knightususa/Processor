@@ -10,31 +10,35 @@ push 5
 pop ax
 
     //координата по y
-push 50
+rand 100
 pop bx
 
     //координата по x
-push 50
+rand 100
 pop cx
 
 
     //скорость по y
-push 2.9
+rand 300
+push 100
+div
 pop gx
 
     //скорость по x
-push 1.7
+rand 300
+push 100
+div
 pop hx
 initw
 
 :loop
-    rand 30
-    push 100
+    rand 300
+    push 1000
     div
     pop jx
 
     push jx
-    push 0.27
+    push 0.298
     ja :More
         push 0
         pop jx
@@ -172,7 +176,7 @@ hlt
                 push ex
                 add
                 pop fx
-                push 0
+                rand 25
                 pop {fx}
                 jmp :endif
 

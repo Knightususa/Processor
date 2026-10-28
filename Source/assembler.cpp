@@ -9,7 +9,6 @@ main(int argc, char **argv)
     DelNameExt(&Options);
     char *filenametxt = CreateName(Options.filename, "txt");
     char *filenamebin = CreateName(Options.filename, "bin");
-
     ByteCodeStruct byteCodeStruct = ProcReadFile(filenametxt);
     WriteByteCode(filenamebin, byteCodeStruct);
 }
@@ -118,7 +117,11 @@ ByteCodeStruct ParsTextToBytecode(size_t nlines, char **pointerArr)
     {
         indexByteCode = 0;
         for(size_t i = 0; i < nlines; i++)
+        {
+            if(pointerArr[i] == NULL)
+                continue;
             ParserCmdFromStr(pointerArr[i], byteCodeStruct.byteCode, &indexByteCode, labels);
+        }
         // for(int i = 0; i < number_of_labels; i++)
         //     if(labels[i].name != NULL) printf("Name = %s, pointer = %lli\n", labels[i].name, labels[i].pointer);
     }
@@ -128,8 +131,6 @@ ByteCodeStruct ParsTextToBytecode(size_t nlines, char **pointerArr)
         byteCodeStruct.size = indexByteCode * sizeof(unsigned char);
         byteCodeStruct.byteCode = (unsigned char *)realloc(byteCodeStruct.byteCode, byteCodeStruct.size);
     }
-
-
     for(int i = 0; i < number_of_labels; i++)
         free(labels[i].name);
     safe_free(labels, number_of_labels * sizeof(Label));
@@ -154,7 +155,7 @@ size_t ReplaceRNto0(char *stringText, size_t fileSize)
             charInArr = stringText[i];
         }
 
-        while(charInArr != '\n' && charInArr != '\r' && charInArr != '\0' && i < fileSize + 1)
+        while(charInArr != '\n' && charInArr != '\r' && charInArr != '\0' && i < fileSize)
         {
             i++;
             charInArr = stringText[i];
@@ -167,7 +168,7 @@ size_t ReplaceRNto0(char *stringText, size_t fileSize)
             nlines++;
         }
 
-        else if(charInArr == '\0' || i == fileSize)
+        else if(charInArr == '\0' || i == fileSize - 1)
         {
             nlines++;
             stringText[i] = '\0';
@@ -240,7 +241,7 @@ void ParserCmdFromStr(char *pointerToStrWithCmd, unsigned char *byteCode, size_t
     yaissert(indexByteCode != NULL);
     yaissert(labels != NULL);
 
-    printf("\nstr = <%s>  ", pointerToStrWithCmd);
+    // printf("\nstr = <%s>  ", pointerToStrWithCmd);
 
     char inputCommand[CommandMaxLen + 1] = "";
     char inputArg[ArgumentMaxLen + 1] = "";
@@ -304,14 +305,14 @@ void FillLabel(CmdToWriteInfo *cmdInfo)
     CheckCmdInfo(cmdInfo);
 
     char *inputCommand1 = cmdInfo->inputCommand + 1;
-    char *inputCommand2 = (char *)safe_calloc(strlen(inputCommand1), sizeof(char));
+    char *inputCommand2 = (char *)safe_calloc(strlen(inputCommand1) + 1, sizeof(char));
     sscanf(inputCommand1, "%[^ ]", inputCommand2);
 
     for(int i = 0; i < number_of_labels; i++)
     {
         if(cmdInfo->labels[i].name == NULL)
         {
-            cmdInfo->labels[i].name = (char *)safe_calloc(strlen(inputCommand2), sizeof(char));
+            cmdInfo->labels[i].name = (char *)safe_calloc(strlen(inputCommand2) + 1, sizeof(char));
             sscanf(inputCommand2, "%[^ ]", cmdInfo->labels[i].name);
             cmdInfo->labels[i].pointer = *cmdInfo->indexByteCode;
             return;
@@ -365,9 +366,9 @@ void WriteOneArgCmd(CmdToWriteInfo *cmdInfo)
         return;
     }
 
-    if(index == delay_index)
+    if(index == delay_index || index == pow_index)
     {
-        WriteIfHaveFields(cmdInfo, delay_index);
+        WriteIfHaveFields(cmdInfo, index);
         return;
     }
 
@@ -384,7 +385,7 @@ void WriteOneArgCmd(CmdToWriteInfo *cmdInfo)
 void WriteIfHaveLabel(CmdToWriteInfo *cmdInfo, unsigned char index)
 {
     char *inputArg1 = cmdInfo->inputArg + 1;
-    char *inputArg2 = (char *)safe_calloc(strlen(inputArg1), sizeof(char));
+    char *inputArg2 = (char *)safe_calloc(strlen(inputArg1) + 1, sizeof(char));
     sscanf(inputArg1, "%[^ ]", inputArg2);
     size_t arg = 0;
     for(int i = 0; i < number_of_labels; i++)
@@ -422,8 +423,8 @@ void WriteIfHaveFields(CmdToWriteInfo *cmdInfo, unsigned char index)
         is_VRAM = true;
     }  
         
-    char *firstStr = (char *)safe_calloc(ArgumentMaxLen, sizeof(char));
-    char *secondStr = (char *)safe_calloc(ArgumentMaxLen, sizeof(char));
+    char *firstStr = (char *)safe_calloc(ArgumentMaxLen + 1, sizeof(char));
+    char *secondStr = (char *)safe_calloc(ArgumentMaxLen + 1, sizeof(char));
 
     int inputN = sscanf(input, "%[^] +]%*[^-0-9]%[^] \n]", firstStr, secondStr);
     // printf("inputN = %i\n", inputN);

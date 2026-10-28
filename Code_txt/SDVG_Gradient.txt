@@ -1,0 +1,246 @@
+//max по x
+push 100
+pop [0]
+
+//max по y
+push 100
+pop [1]
+
+//center x
+push 50
+pop [2]
+
+//center y
+push 50
+pop [3]
+
+
+initw
+:loop
+    call :RandomCoefs
+    call :Calculate
+    call :CheckAndDraw
+    jmp :loop
+
+
+:RandomCoefs
+    //Const scale
+    rand 2
+    push 0
+    je :Small1
+        rand 10000
+        jmp :EndGen1
+
+    :Small1
+        rand 10000
+        push 10000
+        div
+        jmp :EndGen1
+
+    :EndGen1
+    pop [4]
+
+    //Stepen
+    rand 2
+    push 0
+    je :Small2
+        rand 10
+        jmp :EndGen2
+
+    :Small2
+        rand 10000
+        push 10000
+        div
+        jmp :EndGen2
+
+    :EndGen2
+    pop [5]
+    call :ShowRand
+    ret
+
+:Calculate
+    push 0
+    pop ix
+
+    push 0
+    pop ax
+
+    :While1
+        push 0
+        pop bx
+
+        push [1]
+        push ax
+        je :endY
+        :While2
+            push [0]
+            push bx
+            je :endX
+                //Квадрат расстояния по y
+                push [3]
+                push ax
+                sub
+                push [3]
+                push ax
+                sub
+                mul
+
+                //Квадрат расстояния по x
+                push [2]
+                push bx
+                sub
+                push [2]
+                push bx
+                sub
+                mul
+                add
+                sqrt
+                //Теперь в стеке расстояние до центра
+                pop cx
+                //Вызываем функцию кладущую в dx яркость пискеля в зависимости от cx
+                call :Formula2
+
+                //Проверка яркости пикселя, если мала то ix++
+                push dx
+
+                //EDITME: допустимая яркость(чтобы хоть один пиксель был 20)
+                push 80
+
+                ja :Normal
+                    push ix + 1
+                    pop ix
+
+                :Normal
+                push ax
+                push [0]
+                mul
+                push bx
+                add
+                pop ex
+                push dx
+                pop {ex}
+
+                push bx + 1
+                pop bx
+                jmp :While2
+
+        :endX
+            push ax + 1
+            pop ax
+            jmp :While1
+
+    :endY
+        ret
+
+:Formula2
+    push cx
+    pow [5]
+    push [4]
+    mul
+    pop dx
+    push dx
+    push 256
+    fmod
+    pop dx
+
+    ret
+
+:CheckAndDraw
+    push [0]
+    push [1]
+    mul
+    push ix
+    //Если яркость всех пикселей меньше положенного то на что смотреть то
+    jne :AllNormal
+        call :ItShit
+        ret
+
+    :AllNormal
+    draw
+    delay 1
+    ret
+
+:ShowRand
+    push S
+    outc
+    push c
+    outc
+    push a
+    outc
+    push l
+    outc
+    push e
+    outc
+    push _
+    outc
+    push i
+    outc
+    push s
+    outc
+    push 10
+    outc
+    push [4]
+    out
+
+    push S
+    outc
+    push t
+    outc
+    push e
+    outc
+    push p
+    outc
+    push e
+    outc
+    push n
+    outc
+    push _
+    outc
+    push i
+    outc
+    push s
+    outc
+    push 10
+    outc
+    push [5]
+    out
+    push 10
+    outc
+    push 10
+    outc
+    push 10
+    outc
+    ret
+
+:ItShit
+    push T
+    outc
+    push h
+    outc
+    push i
+    outc
+    push s
+    outc
+    push _
+    outc
+    push i
+    outc
+    push s
+    outc
+    push _
+    outc
+    push s
+    outc
+    push h
+    outc
+    push i
+    outc
+    push t
+    outc
+    push 10
+    outc
+    push 10
+    outc
+    push 10
+    outc
+    ret

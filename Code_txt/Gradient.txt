@@ -1,0 +1,334 @@
+//max по x
+push 100
+pop [0]
+
+//max по y
+push 100
+pop [1]
+
+//center x
+push 50
+pop [2]
+
+//center y
+push 50
+pop [3]
+
+call :AskForInput
+in
+push 1
+je :Input
+    //Const scale
+    rand 2
+    push 0
+    je :Small1
+        rand 10000
+        jmp :EndGen1
+
+    :Small1
+        rand 10000
+        push 10000
+        div
+        jmp :EndGen1
+
+    :EndGen1
+    pop [4]
+
+    //Stepen
+    //TODO add stepen double(now int) (push 1 > rand 2)
+    rand 2
+    push 0
+    je :Small2
+        rand 10
+        jmp :EndGen2
+
+    :Small2
+        rand 10000
+        push 10000
+        div
+        jmp :EndGen2
+
+    :EndGen2
+    pop [5]
+    call :ShowRand
+    jmp :Start
+
+:Input
+    //Const scale
+    call :AskForScale
+    in
+    pop [4]
+
+    //Stepen
+    call :AskForStep
+    in
+    pop [5]
+    jmp :Start
+
+
+:Start
+
+initw
+:loop
+    call :Calculate
+    draw
+    jmp :loop
+
+:Calculate
+    push 0
+    pop ax
+
+    :While1
+        push 0
+        pop bx
+
+        push [1]
+        push ax
+        je :endY
+        :While2
+            push [0]
+            push bx
+            je :endX
+                //Квадрат расстояния по y
+                push [3]
+                push ax
+                sub
+                push [3]
+                push ax
+                sub
+                mul
+
+                //Квадрат расстояния по x
+                push [2]
+                push bx
+                sub
+                push [2]
+                push bx
+                sub
+                mul
+                add
+                sqrt
+                //Теперь в стеке расстояние до центра
+                pop cx
+                //Вызываем функцию кладущую в dx яркость пискеля в зависимости от cx
+                call :Formula2
+
+                push ax
+                push [0]
+                mul
+                push bx
+                add
+                pop ex
+                push dx
+                pop {ex}
+
+                push bx + 1
+                pop bx
+                jmp :While2
+
+        :endX
+            push ax + 1
+            pop ax
+            jmp :While1
+
+    :endY
+        ret
+
+:Formula2
+    push cx
+    pow [5]
+    push [4]
+    mul
+    pop dx
+    ret
+
+:AskForStep
+    push E
+    outc
+    push n
+    outc
+    push t
+    outc
+    push e
+    outc
+    push r
+    outc
+    push _
+    outc
+    push s
+    outc
+    push t
+    outc
+    push e
+    outc
+    push p
+    outc
+    push e
+    outc
+    push n
+    outc
+    push 10
+    outc
+    ret
+
+:AskForScale
+    push E
+    outc
+    push n
+    outc
+    push t
+    outc
+    push e
+    outc
+    push r
+    outc
+    push _
+    outc
+    push s
+    outc
+    push c
+    outc
+    push a
+    outc
+    push l
+    outc
+    push e
+    outc
+    push 10
+    outc
+    ret
+
+:AskForInput
+    push E
+    outc
+    push n
+    outc
+    push t
+    outc
+    push e
+    outc
+    push r
+    outc
+    push _
+    outc
+    push 49
+    outc
+    push _
+    outc
+    push t
+    outc
+    push o
+    outc
+    push _
+    outc
+    push i
+    outc
+    push n
+    outc
+    push p
+    outc
+    push u
+    outc
+    push t
+    outc
+    push _
+    outc
+    push b
+    outc
+    push y
+    outc
+    push _
+    outc
+    push u
+    outc
+    push _
+    outc
+    push o
+    outc
+    push r
+    outc
+    push _
+    outc
+    push s
+    outc
+    push m
+    outc
+    push t
+    outc
+    push h
+    outc
+    push _
+    outc
+    push t
+    outc
+    push o
+    outc
+    push _
+    outc
+    push r
+    outc
+    push a
+    outc
+    push n
+    outc
+    push d
+    outc
+    push o
+    outc
+    push m
+    outc
+    push _
+    outc
+    push i
+    outc
+    push t
+    outc
+    push 10
+    outc
+    ret
+
+:ShowRand
+    push S
+    outc
+    push c
+    outc
+    push a
+    outc
+    push l
+    outc
+    push e
+    outc
+    push _
+    outc
+    push i
+    outc
+    push s
+    outc
+    push 10
+    outc
+    push [4]
+    out
+
+    push S
+    outc
+    push t
+    outc
+    push e
+    outc
+    push p
+    outc
+    push e
+    outc
+    push n
+    outc
+    push _
+    outc
+    push i
+    outc
+    push s
+    outc
+    push 10
+    outc
+    push [5]
+    out
+    ret
